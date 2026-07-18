@@ -1,0 +1,15 @@
+{
+  "itemGroup.modernizegameframework.secure_container": "Secure Container",
+  "item.modernizegameframework.secure_container.zener": "Zener Secure Container",
+  "item.modernizegameframework.secure_container.ougas": "Ougas Secure Container",
+  "item.modernizegameframework.secure_container.gamma": "Gamma Secure Container",
+  "item.modernizegameframework.secure_container.delta": "Delta Secure Container",
+  "item.modernizegameframework.secure_container.epsilon": "Epsilon Secure Container",
+  "container.modernizegameframework.secure_container.zener": "Zener Secure Container",
+  "container.modernizegameframework.secure_container.ougas": "Ougas Secure Container",
+  "container.modernizegameframework.secure_container.gamma": "Gamma Secure Container",
+  "container.modernizegameframework.secure_container.delta": "Delta Secure Container",
+  "container.modernizegameframework.secure_container.epsilon": "Epsilon Secure Container",
+  "gui.modernizegameframework.secure_container.title": "Secure Container",
+  "gui.modernizegameframework.secure_container.main_slot": "Main Slot"
+}

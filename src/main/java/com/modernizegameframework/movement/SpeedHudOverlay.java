@@ -13,49 +13,57 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * 速度显示 HUD
- * 在屏幕右下角显示当前水平速度（m/s）
- * MC 中 1 方块 = 1 米，每 tick 速度 × 20 = m/s
+ * 速度与连跳统计 HUD
+ * 显示位置：屏幕右下角，物品栏上方
+ * 四行独立显示：当前速度、平均速度(a)、峰值速度(max)、最远跳跃距离(d)
  */
 @Mod.EventBusSubscriber(modid = com.modernizegameframework.ModernizeGameFramework.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class SpeedHudOverlay {
 
-    /**
-     * 注册速度 HUD 叠层
-     */
     @SubscribeEvent
     public static void registerOverlay(RegisterGuiOverlaysEvent event) {
         event.registerAboveAll("speed_hud", SPEED_HUD);
     }
 
-    /**
-     * 速度 HUD 渲染逻辑
-     * 显示位置：屏幕右下角，物品栏上方
-     */
     private static final IGuiOverlay SPEED_HUD = (gui, guiGraphics, partialTicks, screenWidth, screenHeight) -> {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null) return;
+        if (player == null || !MovementConfig.ENABLED.get()) return;
 
-        // 未启用移动系统时不显示
-        if (!MovementConfig.ENABLED.get()) return;
-
-        // 计算水平速度（方块/tick → m/s，乘以 20）
         Vec3 delta = player.getDeltaMovement();
-        double horizontalSpeed = Math.sqrt(delta.x * delta.x + delta.z * delta.z) * 20.0;
+        double currentSpeed = Math.sqrt(delta.x * delta.x + delta.z * delta.z) * 20.0;
 
-        // 格式化显示文本
-        String text = String.format("%.2f m/s", horizontalSpeed);
+        Font font = mc.font;
+        int lineHeight = font.lineHeight + 2;
+
+        // 四行独立显示
+        String line1 = String.format("%.2f m/s", currentSpeed);
+        String line2 = String.format("a: %.2f", MovementClientEvents.bhopChainAvgSpeed);
+        String line3 = String.format("max: %.2f", MovementClientEvents.bhopChainPeakSpeed);
+        String line4 = String.format("d: %.2f m", MovementClientEvents.bhopChainLongestJump);
+
+        // 计算最长行宽度
+        int maxWidth = font.width(line1);
+        maxWidth = Math.max(maxWidth, font.width(line2));
+        maxWidth = Math.max(maxWidth, font.width(line3));
+        maxWidth = Math.max(maxWidth, font.width(line4));
 
         // 渲染位置：右下角，物品栏上方
-        Font font = mc.font;
-        int textWidth = font.width(text);
-        int x = screenWidth - textWidth - 4;  // 距右边 4 像素
-        int y = screenHeight - 40;             // 物品栏上方
+        int x = screenWidth - maxWidth - 4;
+        int y = screenHeight - 40 - lineHeight * 3; // 往上挪给四行腾空间
 
-        // 绘制阴影背景 + 文字
+        // 绘制半透明背景
+        int totalHeight = lineHeight * 4 + 4;
         RenderSystem.enableBlend();
-        guiGraphics.fill(x - 3, y - 2, x + textWidth + 3, y + font.lineHeight + 2, 0x80000000);
-        guiGraphics.drawString(font, text, x, y, 0xFFFFFF, false);
+        guiGraphics.fill(x - 3, y - 2, x + maxWidth + 3, y + totalHeight, 0x80000000);
+
+        // 绘制四行文字
+        guiGraphics.drawString(font, line1, x, y, 0xFFFFFF, false);
+        y += lineHeight;
+        guiGraphics.drawString(font, line2, x, y, 0xAAAAAA, false);
+        y += lineHeight;
+        guiGraphics.drawString(font, line3, x, y, 0xAAAAAA, false);
+        y += lineHeight;
+        guiGraphics.drawString(font, line4, x, y, 0xAAAAAA, false);
     };
 }

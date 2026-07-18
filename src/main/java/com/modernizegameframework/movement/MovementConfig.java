@@ -23,12 +23,14 @@ public class MovementConfig {
     public static final ForgeConfigSpec.DoubleValue AIR_WISH_SPEED;
     public static final ForgeConfigSpec.DoubleValue AIR_CONTROL;
 
+    // 急停惩罚
+    public static final ForgeConfigSpec.DoubleValue STOP_SPEED_THRESHOLD_ANGLE;
+    public static final ForgeConfigSpec.DoubleValue STOP_SPEED_MAX_PENALTY;
+
     // 连跳
     public static final ForgeConfigSpec.BooleanValue AUTO_BHOP;
     public static final ForgeConfigSpec.DoubleValue BHOP_COST;
     public static final ForgeConfigSpec.BooleanValue BHOP_KEEP_SPEED;
-    public static final ForgeConfigSpec.DoubleValue BHOP_ACCUMULATE_RATE;
-    public static final ForgeConfigSpec.DoubleValue BHOP_BONUS_MAX_SPEED;
 
     // 体力联动
     public static final ForgeConfigSpec.DoubleValue DEPLETED_FRICTION;
@@ -59,6 +61,14 @@ public class MovementConfig {
                 .comment("空中控制力（0=无法改向，1=完全控制），影响 wishSpeed 的实际使用比例")
                 .defineInRange("airControl", 1.0, 0.0, 1.0);
 
+        BUILDER.comment("急停惩罚设置（起源引擎 stopSpeed 机制）");
+        STOP_SPEED_THRESHOLD_ANGLE = BUILDER
+                .comment("急停惩罚触发角度（度），当前速度与按键朝向夹角超过此值开始减速")
+                .defineInRange("stopSpeedThresholdAngle", 90.0, 0.0, 180.0);
+        STOP_SPEED_MAX_PENALTY = BUILDER
+                .comment("急停惩罚最大比例（0.5 = 最多减少 50% 速度），在 180° 时达到最大值")
+                .defineInRange("stopSpeedMaxPenalty", 0.5, 0.0, 1.0);
+
         BUILDER.comment("连跳设置");
         AUTO_BHOP = BUILDER
                 .comment("是否启用自动连跳（按住空格落地即连跳，无需精准按键）")
@@ -69,12 +79,6 @@ public class MovementConfig {
         BHOP_KEEP_SPEED = BUILDER
                 .comment("连跳时是否保持水平速度（跳过地面摩擦衰减）")
                 .define("bhopKeepSpeed", true);
-        BHOP_ACCUMULATE_RATE = BUILDER
-                .comment("连跳速度累加率（每次连跳落地前速度的此比例累加到下次连跳基础速度，0.1 = 10%）")
-                .defineInRange("bhopAccumulateRate", 0.1, 0.0, 1.0);
-        BHOP_BONUS_MAX_SPEED = BUILDER
-                .comment("连跳累加奖励速度上限（m/s），奖励标量达到此值后不再增加")
-                .defineInRange("bhopBonusMaxSpeed", 15.0, 0.0, 100.0);
 
         BUILDER.comment("体力联动设置");
         DEPLETED_FRICTION = BUILDER

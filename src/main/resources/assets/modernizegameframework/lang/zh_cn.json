@@ -1,0 +1,15 @@
+{
+  "itemGroup.modernizegameframework.secure_container": "安全箱",
+  "item.modernizegameframework.secure_container.zener": "Zener 安全箱",
+  "item.modernizegameframework.secure_container.ougas": "Ougas 安全箱",
+  "item.modernizegameframework.secure_container.gamma": "Gamma 安全箱",
+  "item.modernizegameframework.secure_container.delta": "Delta 安全箱",
+  "item.modernizegameframework.secure_container.epsilon": "Epsilon 安全箱",
+  "container.modernizegameframework.secure_container.zener": "Zener 安全箱",
+  "container.modernizegameframework.secure_container.ougas": "Ougas 安全箱",
+  "container.modernizegameframework.secure_container.gamma": "Gamma 安全箱",
+  "container.modernizegameframework.secure_container.delta": "Delta 安全箱",
+  "container.modernizegameframework.secure_container.epsilon": "Epsilon 安全箱",
+  "gui.modernizegameframework.secure_container.title": "安全箱",
+  "gui.modernizegameframework.secure_container.main_slot": "主槽位"
+}

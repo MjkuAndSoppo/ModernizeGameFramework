@@ -3,6 +3,11 @@ package com.modernizegameframework;
 import com.mojang.logging.LogUtils;
 import com.modernizegameframework.movement.MovementConfig;
 import com.modernizegameframework.movement.MovementNetwork;
+import com.modernizegameframework.securecontainer.SecureContainerConfig;
+import com.modernizegameframework.securecontainer.SecureContainerItem;
+import com.modernizegameframework.securecontainer.SecureContainerNetwork;
+import com.modernizegameframework.securecontainer.SecureContainerRegistry;
+import com.modernizegameframework.securecontainer.SecureContainerScreen;
 import com.modernizegameframework.stamina.MaxStaminaAttribute;
 import com.modernizegameframework.stamina.StaminaConfig;
 import com.modernizegameframework.stamina.StaminaNetwork;
@@ -88,6 +93,14 @@ public class ModernizeGameFramework
         // Register movement network messages
         MovementNetwork.register();
 
+        // Register secure container network messages
+        SecureContainerNetwork.register();
+
+        // Register secure container items, menu types, and creative tabs
+        SecureContainerRegistry.ITEMS.register(modEventBus);
+        SecureContainerRegistry.MENU_TYPES.register(modEventBus);
+        SecureContainerRegistry.CREATIVE_TABS.register(modEventBus);
+
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
 
@@ -102,6 +115,9 @@ public class ModernizeGameFramework
 
         // Register movement config with a separate file name
         context.registerConfig(ModConfig.Type.COMMON, MovementConfig.SPEC, "modernizegameframework-movement.toml");
+
+        // Register secure container config with a separate file name
+        context.registerConfig(ModConfig.Type.COMMON, SecureContainerConfig.SPEC, "modernizegameframework-securecontainer.toml");
     }
 
     private void commonSetup(final FMLCommonSetupEvent event)
@@ -142,6 +158,23 @@ public class ModernizeGameFramework
             // Some client setup code
             LOGGER.info("HELLO FROM CLIENT SETUP");
             LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+
+            // 注册安全箱界面
+            net.minecraft.client.gui.screens.MenuScreens.register(
+                    SecureContainerRegistry.SECURE_CONTAINER_MENU.get(), SecureContainerScreen::new);
+
+            // 注册安全箱物品颜色（用潜影盒纹理 + 容器颜色着色）
+            Minecraft.getInstance().getItemColors().register((stack, tintIndex) -> {
+                if (tintIndex == 0 && stack.getItem() instanceof SecureContainerItem sci) {
+                    return sci.getType().getColor();
+                }
+                return 0xFFFFFF;
+            },
+            SecureContainerRegistry.ZENER.get(),
+            SecureContainerRegistry.OUGAS.get(),
+            SecureContainerRegistry.GAMMA.get(),
+            SecureContainerRegistry.DELTA.get(),
+            SecureContainerRegistry.EPSILON.get());
         }
     }
 }

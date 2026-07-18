@@ -92,6 +92,36 @@ public class MovementHelper {
     }
 
     /**
+     * 起源引擎 stopSpeed 急停惩罚
+     * 当前速度方向与按键朝向夹角过大时，按比例削减速度
+     * 夹角在 thresholdAngle 以内无惩罚，超过后线性增加到 maxPenalty（在 180° 时）
+     *
+     * @param velocity       当前速度向量
+     * @param wishDir        期望移动方向（归一化）
+     * @param thresholdAngle 惩罚触发角度（度）
+     * @param maxPenalty     最大惩罚比例（0.0 ~ 1.0）
+     * @return 惩罚后的速度向量（方向不变，仅缩放大小）
+     */
+    public static Vec3 applyStopSpeed(Vec3 velocity, Vec3 wishDir, double thresholdAngle, double maxPenalty) {
+        double speed = velocity.length();
+        if (speed < 1.0E-6 || wishDir.lengthSqr() < 1.0E-6) return velocity;
+
+        // 计算夹角（度）
+        double dot = (velocity.x * wishDir.x + velocity.z * wishDir.z) / speed;
+        dot = Mth.clamp(dot, -1.0, 1.0);
+        double angle = Math.toDegrees(Math.acos(dot));
+
+        if (angle <= thresholdAngle) return velocity;
+
+        // 线性插值：thresholdAngle → 0% 惩罚，180° → maxPenalty
+        double t = (angle - thresholdAngle) / (180.0 - thresholdAngle);
+        double penalty = t * maxPenalty;
+        double scale = 1.0 - penalty;
+
+        return velocity.scale(scale);
+    }
+
+    /**
      * 检测玩家主手或副手是否持有基岩
      * 手持基岩时所有体力消耗行为均豁免
      *
