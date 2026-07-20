@@ -41,6 +41,7 @@ public class StaminaHudRenderer {
      */
     @SubscribeEvent
     public static void onRenderGui(RenderGuiEvent.Post event) {
+        if (!StaminaConfig.ENABLED.get()) return;
         Player player = Minecraft.getInstance().player;
         if (player == null) return;
 

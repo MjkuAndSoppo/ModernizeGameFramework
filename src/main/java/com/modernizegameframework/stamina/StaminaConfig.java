@@ -11,6 +11,9 @@ public class StaminaConfig {
     public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
     public static final ForgeConfigSpec SPEC;
 
+    /** 体力系统总开关 */
+    public static final ForgeConfigSpec.BooleanValue ENABLED;
+
     // 基础数值
     public static final ForgeConfigSpec.DoubleValue DEFAULT_MAX_STAMINA;
     public static final ForgeConfigSpec.DoubleValue STAMINA_PER_ROW;
@@ -34,6 +37,10 @@ public class StaminaConfig {
 
     static {
         BUILDER.push("stamina");
+
+        ENABLED = BUILDER
+                .comment("体力系统总开关，设为 false 可禁用体力消耗和恢复")
+                .define("enabled", true);
 
         BUILDER.comment("基础数值设置");
         DEFAULT_MAX_STAMINA = BUILDER

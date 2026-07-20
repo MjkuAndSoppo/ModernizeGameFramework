@@ -7,15 +7,15 @@ package com.modernizegameframework.securecontainer;
 public enum SecureContainerType {
 
     /** 黄色 2×2 = 4 格 */
-    ZENER("zener", 2, 2, 0xFFD700),
+    ALPHA("alpha", 2, 2, 0xFFD700),
     /** 橙色 3×2 = 6 格 */
-    OUGAS("ougas", 3, 2, 0xFF8C00),
+    BETA("beta", 3, 2, 0xFF8C00),
     /** 黑色 3×3 = 9 格 */
     GAMMA("gamma", 3, 3, 0x2A2A2A),
     /** 绿色 3×4 = 12 格 */
-    DELTA("delta", 3, 4, 0x00CC00),
+    KAPPA("kappa", 3, 4, 0x00CC00),
     /** 蓝色 5×2 = 10 格 */
-    EPSILON("epsilon", 5, 2, 0x3366FF);
+    THETA("theta", 5, 2, 0x3366FF);
 
     private final String name;
     private final int cols;

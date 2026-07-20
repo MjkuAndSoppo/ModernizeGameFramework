@@ -1,0 +1,63 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.8/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :
+Java: 17.0.12, JVM: 17.0.12+8-LTS-286 (Oracle Corporation), Arch: amd64
+
+> Task :compileJava
+.\gradlew : E:\project 666\ModernizeGameFramework\src\main\java\com\modernizega
+meframework\securecontainer\SecureContainerCurios.java:36: 警告: [removal] top.th
+eillusivec4.curios.api 中的 SlotTypeMessage 已过时, 且标记为待删除
+At line:1 char:5
++ & { .\gradlew compileJava 2>&1 | Out-File -FilePath compile.log -Enco ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (E:\project 666\...ge 已过时, 且标记为待删除 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+        InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE,
+                                       ^
+E:\project 666\ModernizeGameFramework\src\main\java\com\modernizegameframework\
+securecontainer\SecureContainerCurios.java:37: 警告: [removal] top.theillusivec4.
+curios.api 中的 SlotTypeMessage 已过时, 且标记为待删除
+                () -> new SlotTypeMessage.Builder(SLOT_ID)
+                          ^
+E:\project 666\ModernizeGameFramework\src\main\java\com\modernizegameframework\
+securecontainer\SecureContainerCurios.java:37: 警告: [removal] SlotTypeMessage 中的
+ Builder 已过时, 且标记为待删除
+                () -> new SlotTypeMessage.Builder(SLOT_ID)
+                                         ^
+E:\project 666\ModernizeGameFramework\src\main\java\com\modernizegameframework\
+securecontainer\SecureContainerCurios.java:37: 警告: [removal] Builder 中的 Builder
+(String) 已过时, 且标记为待删除
+                () -> new SlotTypeMessage.Builder(SLOT_ID)
+                      ^
+E:\project 666\ModernizeGameFramework\src\main\java\com\modernizegameframework\
+securecontainer\SecureContainerCurios.java:38: 警告: [removal] Builder 中的 icon(Re
+sourceLocation) 已过时, 且标记为待删除
+                        .icon(ResourceLocation.withDefaultNamespace("item/empty
+_armor_slot_shield"))
+                        ^
+E:\project 666\ModernizeGameFramework\src\main\java\com\modernizegameframework\
+securecontainer\SecureContainerCurios.java:39: 警告: [removal] Builder 中的 size(in
+t) 已过时, 且标记为待删除
+                        .size(1)
+                        ^
+E:\project 666\ModernizeGameFramework\src\main\java\com\modernizegameframework\
+securecontainer\SecureContainerCurios.java:40: 警告: [removal] Builder 中的 build()
+ 已过时, 且标记为待删除
+                        .build());
+                        ^
+注: E:\project 666\ModernizeGameFramework\src\main\java\com\modernizegameframewo
+rk\ModernizeGameFramework.java使用或覆盖了已过时的 API。
+注: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+7 个警告
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 8s
+1 actionable task: 1 executed

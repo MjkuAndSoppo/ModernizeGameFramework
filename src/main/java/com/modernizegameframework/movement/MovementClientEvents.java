@@ -1,14 +1,17 @@
 package com.modernizegameframework.movement;
 
+import com.modernizegameframework.Config;
 import com.modernizegameframework.ModernizeGameFramework;
+import com.modernizegameframework.bodypart.BodyPartHelper;
+import com.modernizegameframework.bodypart.BodyPartPenaltyHandler;
 import com.modernizegameframework.stamina.StaminaHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * 惯性移动系统客户端事件处理
@@ -70,6 +73,10 @@ public class MovementClientEvents {
         boolean staminaDepleted = StaminaHelper.getStamina(player)
                 .map(s -> s.isDepleted())
                 .orElse(false);
+        boolean legDestroyed = Config.BODYPART_ENABLED.get()
+                && BodyPartHelper.getBodyPartCapability(player)
+                        .map(BodyPartPenaltyHandler::isLegDestroyed)
+                        .orElse(false);
 
         boolean onGround = player.onGround();
         Vec3 delta = player.getDeltaMovement();
@@ -157,8 +164,33 @@ public class MovementClientEvents {
             applyGroundInertia(player, delta);
         }
 
+        // === 速度上限：体力耗尽 5m/s，腿黑 2m/s ===
+        applySpeedCap(player, staminaDepleted, legDestroyed);
+
         prevOnGround = onGround;
         prevHorizontalDelta = new Vec3(player.getDeltaMovement().x, 0, player.getDeltaMovement().z);
+    }
+
+    /**
+     * 应用体力耗尽 / 腿黑的水平速度上限
+     * 腿黑上限（2m/s）优先于体力耗尽上限（5m/s）
+     */
+    private static void applySpeedCap(LocalPlayer player, boolean staminaDepleted, boolean legDestroyed) {
+        double limit = Double.MAX_VALUE;
+        if (legDestroyed) {
+            limit = Config.BODYPART_LEG_DESTROYED_SPEED_LIMIT.get();
+        } else if (staminaDepleted) {
+            limit = MovementConfig.DEPLETED_SPEED_LIMIT.get();
+        }
+        if (limit <= 0.0) return;
+
+        Vec3 delta = player.getDeltaMovement();
+        Vec3 horizontal = new Vec3(delta.x, 0.0, delta.z);
+        double speed = horizontal.length() * 20.0;
+        if (speed > limit) {
+            Vec3 clamped = horizontal.normalize().scale(limit / 20.0);
+            player.setDeltaMovement(clamped.x, delta.y, clamped.z);
+        }
     }
 
     private static void applyAirAccelerate(LocalPlayer player, Vec3 delta) {

@@ -2,6 +2,7 @@ package com.modernizegameframework.securecontainer;
 
 import com.modernizegameframework.ModernizeGameFramework;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
@@ -30,7 +31,7 @@ public class SecureContainerEvents {
     }
 
     /**
-     * 玩家死亡/切换维度时保留安全箱数据
+     * 玩家死亡/切换维度时保留安全箱数据，并在服务端同步给客户端
      */
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
@@ -46,5 +47,10 @@ public class SecureContainerEvents {
         });
 
         original.invalidateCaps();
+
+        // 将复制后的数据立即同步到客户端，确保重生后 overlay 能直接显示
+        if (!newPlayer.level().isClientSide && newPlayer instanceof ServerPlayer serverPlayer) {
+            SecureContainerNetwork.syncAll(serverPlayer);
+        }
     }
 }

@@ -25,6 +25,7 @@ public class StaminaClientEvents {
      */
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (!StaminaConfig.ENABLED.get()) return;
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;

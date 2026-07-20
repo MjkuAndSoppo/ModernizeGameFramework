@@ -1,6 +1,9 @@
 package com.modernizegameframework;
 
 import com.mojang.logging.LogUtils;
+import com.modernizegameframework.bodypart.BodyPartEffects;
+import com.modernizegameframework.bodypart.BodyPartNetwork;
+import com.modernizegameframework.medical.MedicalItems;
 import com.modernizegameframework.movement.MovementConfig;
 import com.modernizegameframework.movement.MovementNetwork;
 import com.modernizegameframework.securecontainer.SecureContainerConfig;
@@ -68,6 +71,14 @@ public class ModernizeGameFramework
             .icon(() -> EXAMPLE_ITEM.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
                 output.accept(EXAMPLE_ITEM.get()); // Add the example item to the tab. For your own tabs, this method is preferred over the event
+                output.accept(MedicalItems.BANDAGE.get());
+                output.accept(MedicalItems.BIG_BANDAGE.get());
+                output.accept(MedicalItems.AI2_MEDKIT.get());
+                output.accept(MedicalItems.IFAK.get());
+                output.accept(MedicalItems.CMS_KIT.get());
+                output.accept(MedicalItems.BIG_SURGICAL_KIT.get());
+                output.accept(MedicalItems.PAINKILLER.get());
+                output.accept(MedicalItems.BIG_PAINKILLER.get());
             }).build());
 
     public ModernizeGameFramework(FMLJavaModLoadingContext context)
@@ -81,14 +92,22 @@ public class ModernizeGameFramework
         BLOCKS.register(modEventBus);
         // Register the Deferred Register to the mod event bus so items get registered
         ITEMS.register(modEventBus);
+        // Register medical items
+        MedicalItems.ITEMS.register(modEventBus);
         // Register the Deferred Register to the mod event bus so tabs get registered
         CREATIVE_MODE_TABS.register(modEventBus);
 
         // Register the max stamina attribute deferred register
         MaxStaminaAttribute.ATTRIBUTES.register(modEventBus);
 
+        // Register body part status effects
+        BodyPartEffects.EFFECTS.register(modEventBus);
+
         // Register stamina network messages
         StaminaNetwork.register();
+
+        // Register body part network messages
+        BodyPartNetwork.register();
 
         // Register movement network messages
         MovementNetwork.register();
@@ -163,18 +182,7 @@ public class ModernizeGameFramework
             net.minecraft.client.gui.screens.MenuScreens.register(
                     SecureContainerRegistry.SECURE_CONTAINER_MENU.get(), SecureContainerScreen::new);
 
-            // 注册安全箱物品颜色（用潜影盒纹理 + 容器颜色着色）
-            Minecraft.getInstance().getItemColors().register((stack, tintIndex) -> {
-                if (tintIndex == 0 && stack.getItem() instanceof SecureContainerItem sci) {
-                    return sci.getType().getColor();
-                }
-                return 0xFFFFFF;
-            },
-            SecureContainerRegistry.ZENER.get(),
-            SecureContainerRegistry.OUGAS.get(),
-            SecureContainerRegistry.GAMMA.get(),
-            SecureContainerRegistry.DELTA.get(),
-            SecureContainerRegistry.EPSILON.get());
+            // 安全箱模型直接使用对应颜色的潜影盒模型，无需额外着色
         }
     }
 }

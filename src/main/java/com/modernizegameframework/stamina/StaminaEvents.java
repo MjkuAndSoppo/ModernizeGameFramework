@@ -30,6 +30,7 @@ public class StaminaEvents {
      */
     @SubscribeEvent
     public static void attachCapabilities(AttachCapabilitiesEvent<Entity> event) {
+        if (!StaminaConfig.ENABLED.get()) return;
         if (event.getObject() instanceof Player player) {
             event.addCapability(ResourceLocation.fromNamespaceAndPath(ModernizeGameFramework.MODID, "stamina"), new StaminaProvider(player));
         }
@@ -40,6 +41,7 @@ public class StaminaEvents {
      */
     @SubscribeEvent
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (!StaminaConfig.ENABLED.get()) return;
         if (event.getLevel().isClientSide()) return;
         if (event.getEntity() instanceof Player player) {
             StaminaNetwork.syncToClient(player);
@@ -53,6 +55,7 @@ public class StaminaEvents {
      */
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (!StaminaConfig.ENABLED.get()) return;
         Player player = event.player;
         if (player.level().isClientSide) return;
 
@@ -90,6 +93,7 @@ public class StaminaEvents {
      */
     @SubscribeEvent
     public static void onLivingJump(LivingEvent.LivingJumpEvent event) {
+        if (!StaminaConfig.ENABLED.get()) return;
         if (!(event.getEntity() instanceof Player player)) return;
         if (player.level().isClientSide) return;
 
@@ -116,6 +120,7 @@ public class StaminaEvents {
      */
     @SubscribeEvent
     public static void onAttack(AttackEntityEvent event) {
+        if (!StaminaConfig.ENABLED.get()) return;
         Player player = event.getEntity();
         if (player.level().isClientSide) return;
         if (hasBedrockInHand(player)) return;
@@ -127,6 +132,7 @@ public class StaminaEvents {
      */
     @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent event) {
+        if (!StaminaConfig.ENABLED.get()) return;
         if (event.getSource().getEntity() instanceof Player player) {
             if (player.level().isClientSide) return;
             StaminaHelper.getStamina(player).ifPresent(stamina -> {
@@ -142,6 +148,7 @@ public class StaminaEvents {
      */
     @SubscribeEvent
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (!StaminaConfig.ENABLED.get()) return;
         Player player = event.getEntity();
         if (player.level().isClientSide) return;
         StaminaHelper.getStamina(player).ifPresent(stamina -> {

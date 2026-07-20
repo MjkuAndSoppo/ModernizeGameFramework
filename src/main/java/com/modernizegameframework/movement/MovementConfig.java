@@ -34,6 +34,7 @@ public class MovementConfig {
 
     // 体力联动
     public static final ForgeConfigSpec.DoubleValue DEPLETED_FRICTION;
+    public static final ForgeConfigSpec.DoubleValue DEPLETED_SPEED_LIMIT;
 
     static {
         BUILDER.push("movement");
@@ -84,6 +85,9 @@ public class MovementConfig {
         DEPLETED_FRICTION = BUILDER
                 .comment("体力归零时落地强制摩擦系数（每 tick 水平速度乘以此值，越小减速越猛）")
                 .defineInRange("depletedFriction", 0.3, 0.0, 1.0);
+        DEPLETED_SPEED_LIMIT = BUILDER
+                .comment("体力耗尽时水平速度上限（单位：m/s，0 表示不限制）")
+                .defineInRange("depletedSpeedLimit", 5.0, 0.0, 100.0);
 
         BUILDER.pop();
         SPEC = BUILDER.build();

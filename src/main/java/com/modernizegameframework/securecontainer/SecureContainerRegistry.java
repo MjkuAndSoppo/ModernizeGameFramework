@@ -37,20 +37,20 @@ public class SecureContainerRegistry {
 
     // === 五种安全箱物品 ===
 
-    public static final RegistryObject<Item> ZENER = ITEMS.register("secure_container_zener",
-            () -> new SecureContainerItem(SecureContainerType.ZENER));
+    public static final RegistryObject<Item> ALPHA = ITEMS.register("secure_container_alpha",
+            () -> new SecureContainerItem(SecureContainerType.ALPHA));
 
-    public static final RegistryObject<Item> OUGAS = ITEMS.register("secure_container_ougas",
-            () -> new SecureContainerItem(SecureContainerType.OUGAS));
+    public static final RegistryObject<Item> BETA = ITEMS.register("secure_container_beta",
+            () -> new SecureContainerItem(SecureContainerType.BETA));
 
     public static final RegistryObject<Item> GAMMA = ITEMS.register("secure_container_gamma",
             () -> new SecureContainerItem(SecureContainerType.GAMMA));
 
-    public static final RegistryObject<Item> DELTA = ITEMS.register("secure_container_delta",
-            () -> new SecureContainerItem(SecureContainerType.DELTA));
+    public static final RegistryObject<Item> KAPPA = ITEMS.register("secure_container_kappa",
+            () -> new SecureContainerItem(SecureContainerType.KAPPA));
 
-    public static final RegistryObject<Item> EPSILON = ITEMS.register("secure_container_epsilon",
-            () -> new SecureContainerItem(SecureContainerType.EPSILON));
+    public static final RegistryObject<Item> THETA = ITEMS.register("secure_container_theta",
+            () -> new SecureContainerItem(SecureContainerType.THETA));
 
     // === 菜单类型 ===
 
@@ -65,13 +65,13 @@ public class SecureContainerRegistry {
             () -> CreativeModeTab.builder()
                     .title(net.minecraft.network.chat.Component.translatable(
                             "itemGroup.modernizegameframework.secure_container"))
-                    .icon(() -> new net.minecraft.world.item.ItemStack(ZENER.get()))
+                    .icon(() -> new net.minecraft.world.item.ItemStack(ALPHA.get()))
                     .displayItems((params, output) -> {
-                        output.accept(ZENER.get());
-                        output.accept(OUGAS.get());
+                        output.accept(ALPHA.get());
+                        output.accept(BETA.get());
                         output.accept(GAMMA.get());
-                        output.accept(DELTA.get());
-                        output.accept(EPSILON.get());
+                        output.accept(KAPPA.get());
+                        output.accept(THETA.get());
                     })
                     .build());
 

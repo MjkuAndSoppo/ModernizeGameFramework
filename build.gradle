@@ -84,6 +84,9 @@ minecraft {
         client {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
+            // 启用 Mixin refmap 重映射，解决 Curios 等依赖在 official 映射下的 mixin 崩溃
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemapperFile', "${buildDir}/createSrgToMcp/output.srg"
         }
 
         server {
@@ -115,6 +118,9 @@ repositories {
     // Put repositories for dependencies here
     // ForgeGradle automatically adds the Forge maven and Maven Central for you
 
+    // Curios API
+    maven { url = "https://maven.theillusivec4.top/" }
+
     // If you have mod jar dependencies in ./libs, you can declare them as a repository like so.
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:flat_dir_resolver
     // flatDir {
@@ -129,6 +135,10 @@ dependencies {
     // If the group id is "net.minecraft" and the artifact id is one of ["client", "server", "joined"],
     // then special handling is done to allow a setup of a vanilla dependency without the use of an external repository.
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    // Curios API（可选依赖，仅编译时可用，运行时需玩家自行安装 Curios）
+    // 注意：开发环境下直接 runtimeOnly 加载 Curios 会触发其 mixin 与 official 映射的兼容性问题
+    compileOnly fg.deobf("top.theillusivec4.curios:curios-forge:5.3.5+1.20.1")
 
     // Example mod dependency with JEI - using fg.deobf() ensures the dependency is remapped to your development mappings
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
