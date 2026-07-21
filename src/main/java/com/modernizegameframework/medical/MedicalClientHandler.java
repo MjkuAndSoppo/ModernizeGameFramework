@@ -59,6 +59,9 @@ public class MedicalClientHandler {
     @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent event) {
         if (!(event.getEntity() instanceof LocalPlayer)) return;
+        if (session != null && session.item.getEffect().isUnbreakable()) {
+            return;
+        }
         stopSession();
     }
 
@@ -104,13 +107,16 @@ public class MedicalClientHandler {
         }
 
         boolean tick() {
-            // 被打断条件：移动、切换物品、物品变更
+            // 被打断条件：切换物品、物品变更（始终检查）
             if (player.getInventory().selected != startSlot) return false;
             ItemStack current = player.getItemInHand(hand);
             if (current.getItem() != item) return false;
-            if (player.isSprinting() || player.isSwimming() || player.isFallFlying()) return false;
-            if (player.getVehicle() != null) return false;
-            if (player.position().distanceToSqr(startPosition) > 0.001) return false;
+            // 非无视性质物品额外检查移动、载具、游泳等打断
+            if (!item.getEffect().isUnbreakable()) {
+                if (player.isSprinting() || player.isSwimming() || player.isFallFlying()) return false;
+                if (player.getVehicle() != null) return false;
+                if (player.position().distanceToSqr(startPosition) > 0.001) return false;
+            }
 
             if (!usagePhase) {
                 activationTicksRemaining--;
@@ -122,8 +128,12 @@ public class MedicalClientHandler {
             } else {
                 usageTicksRemaining--;
                 if (usageTicksRemaining <= 0) {
-                    // 客户端预测：效果已应用，若仍可继续治疗则进入下一循环
-                    if (!item.getEffect().canApply(player, stack)) {
+                    // 非循环性质物品在使用读条结束后停止
+                    if (!item.getEffect().isLoop()) {
+                        return false;
+                    }
+                    // 循环性质物品：非任意情况下若不能再使用则停止预测
+                    if (!item.getEffect().isAnytime() && !item.getEffect().canApply(player, stack)) {
                         return false;
                     }
                     usageTicksRemaining = item.getUsageTicks();

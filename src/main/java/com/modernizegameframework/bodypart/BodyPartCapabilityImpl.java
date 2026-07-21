@@ -159,6 +159,12 @@ public class BodyPartCapabilityImpl implements BodyPartCapability {
         for (BodyPartType type : BodyPartType.values()) {
             int ticks = bleedingTicks.get(type);
             if (ticks > 0) {
+                // 黑色部位不再出血
+                if (isDestroyed(type)) {
+                    bleedingTicks.put(type, 0);
+                    changed = true;
+                    continue;
+                }
                 ticks--;
                 if (interval > 0 && ticks % interval == 0) {
                     applyDamage(type, damage);

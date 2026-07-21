@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "modernizegameframework:small_backpack",
+    "modernizegameframework:medium_backpack",
+    "modernizegameframework:large_backpack"
+  ]
+}

@@ -21,12 +21,12 @@ public final class MedicalEffects {
     }
 
     /**
-     * 绷带：停止一个非黑色出血部位，并为其回复 10 血
+     * 绷带：停止一个非黑色出血部位，任意情况下都能使用且不会被伤害打断
      */
     public static final MedicalEffect BANDAGE = new MedicalEffect() {
         @Override
         public boolean canApply(Player player, ItemStack stack) {
-            return hasAnyBleedingNotDestroyed(player);
+            return true;
         }
 
         @Override
@@ -35,7 +35,6 @@ public final class MedicalEffects {
                 BodyPartType target = findBleedingNotDestroyedPart(player);
                 if (target == null) return false;
                 cap.setBleedingTicks(target, 0);
-                cap.heal(target, 10.0f);
                 return false; // 一次性效果，结束读条
             }).orElse(false);
         }
@@ -49,15 +48,25 @@ public final class MedicalEffects {
         public int durabilityCost() {
             return 1;
         }
+
+        @Override
+        public boolean isAnytime() {
+            return false;
+        }
+
+        @Override
+        public boolean isUnbreakable() {
+            return true;
+        }
     };
 
     /**
-     * 大绷带：停止一个非黑色出血部位，所有非黑色部位各回 10 血
+     * 大绷带：停止一个非黑色出血部位，仅在出血时可用且不会被伤害打断
      */
     public static final MedicalEffect BIG_BANDAGE = new MedicalEffect() {
         @Override
         public boolean canApply(Player player, ItemStack stack) {
-            return hasAnyBleedingNotDestroyed(player) || hasAnyDamagedNotDestroyed(player);
+            return true;
         }
 
         @Override
@@ -66,11 +75,6 @@ public final class MedicalEffects {
                 BodyPartType target = findBleedingNotDestroyedPart(player);
                 if (target != null) {
                     cap.setBleedingTicks(target, 0);
-                }
-                for (BodyPartType type : BodyPartType.values()) {
-                    if (!cap.isDestroyed(type)) {
-                        cap.heal(type, 10.0f);
-                    }
                 }
                 return false;
             }).orElse(false);
@@ -84,6 +88,16 @@ public final class MedicalEffects {
         @Override
         public int durabilityCost() {
             return 1;
+        }
+
+        @Override
+        public boolean isAnytime() {
+            return false;
+        }
+
+        @Override
+        public boolean isUnbreakable() {
+            return true;
         }
     };
 
@@ -178,7 +192,7 @@ public final class MedicalEffects {
     };
 
     /**
-     * 大手术包：循环恢复黑色部位到 10 血
+     * 大手术包：循环恢复黑色部位到 1 血
      */
     public static final MedicalEffect BIG_SURGICAL_KIT = new MedicalEffect() {
         @Override
@@ -191,7 +205,7 @@ public final class MedicalEffects {
             return BodyPartHelper.getBodyPartCapability(player).map(cap -> {
                 BodyPartType target = findDestroyedPart(player);
                 if (target == null) return false;
-                cap.setHealth(target, 10.0f);
+                cap.setHealth(target, 1.0f);
                 return hasAnyDestroyedPart(player);
             }).orElse(false);
         }
@@ -208,12 +222,12 @@ public final class MedicalEffects {
     };
 
     /**
-     * 止痛药：清除疼痛并添加止痛药效果
+     * 止痛药：清除疼痛并添加止痛药效果，任意情况下都能使用
      */
     public static final MedicalEffect PAINKILLER = new MedicalEffect() {
         @Override
         public boolean canApply(Player player, ItemStack stack) {
-            return player.hasEffect(BodyPartEffects.PAIN.get());
+            return true;
         }
 
         @Override
@@ -234,16 +248,21 @@ public final class MedicalEffects {
         @Override
         public int durabilityCost() {
             return 1;
+        }
+
+        @Override
+        public boolean isAnytime() {
+            return true;
         }
     };
 
     /**
-     * 大止痛药：清除疼痛 + 止痛药效果 + 所有非黑色部位回 5 血
+     * 大止痛药：清除疼痛 + 止痛药效果，任意情况下都能使用
      */
     public static final MedicalEffect BIG_PAINKILLER = new MedicalEffect() {
         @Override
         public boolean canApply(Player player, ItemStack stack) {
-            return player.hasEffect(BodyPartEffects.PAIN.get()) || hasAnyDamagedNotDestroyed(player);
+            return true;
         }
 
         @Override
@@ -253,13 +272,6 @@ public final class MedicalEffects {
             if (duration > 0) {
                 player.addEffect(new MobEffectInstance(BodyPartEffects.PAINKILLER.get(), duration, 0, false, false, true));
             }
-            BodyPartHelper.getBodyPartCapability(player).ifPresent(cap -> {
-                for (BodyPartType type : BodyPartType.values()) {
-                    if (!cap.isDestroyed(type)) {
-                        cap.heal(type, 5.0f);
-                    }
-                }
-            });
             return false;
         }
 
@@ -271,6 +283,11 @@ public final class MedicalEffects {
         @Override
         public int durabilityCost() {
             return 1;
+        }
+
+        @Override
+        public boolean isAnytime() {
+            return true;
         }
     };
 

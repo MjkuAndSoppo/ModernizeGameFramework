@@ -42,4 +42,24 @@ public interface MedicalEffect {
      * @return 耐久消耗
      */
     int durabilityCost();
+
+    /**
+     * 是否为"任意"性质
+     * 任意性质的医疗物品不受当前状态限制，任何情况下都能使用
+     *
+     * @return true 表示任意情况下可用
+     */
+    default boolean isAnytime() {
+        return false;
+    }
+
+    /**
+     * 是否为"无视"性质
+     * 无视性质的医疗物品在使用读条期间不会被任何伤害打断
+     *
+     * @return true 表示不会被伤害打断
+     */
+    default boolean isUnbreakable() {
+        return false;
+    }
 }

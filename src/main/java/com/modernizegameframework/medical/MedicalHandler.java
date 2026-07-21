@@ -65,13 +65,19 @@ public class MedicalHandler {
 
     /**
      * 玩家受伤时打断当前医疗读条
+     * 拥有"无视"性质的物品不会被伤害打断
      */
     @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (player.level().isClientSide) return;
 
-        MedicalSession session = SESSIONS.remove(player.getUUID());
+        MedicalSession session = SESSIONS.get(player.getUUID());
+        if (session != null && session.getItem().getEffect().isUnbreakable()) {
+            return;
+        }
+
+        session = SESSIONS.remove(player.getUUID());
         if (session != null) {
             session.finish(false);
         }

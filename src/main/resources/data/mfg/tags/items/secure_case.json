@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "modernizegameframework:secure_container_alpha",
+    "modernizegameframework:secure_container_beta",
+    "modernizegameframework:secure_container_gamma",
+    "modernizegameframework:secure_container_kappa",
+    "modernizegameframework:secure_container_theta"
+  ]
+}

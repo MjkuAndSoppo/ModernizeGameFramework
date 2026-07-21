@@ -10,13 +10,9 @@ import net.minecraft.world.level.Level;
 /**
  * 医疗物品基类
  * 支持消耗品与耐久型两种模式，右键开始读条治疗
+ * 耐久型物品采用原版耐久条显示
  */
 public class MedicalItem extends Item {
-
-    /**
-     * 耐久值 NBT 键名
-     */
-    public static final String DURABILITY_TAG = "mgfMedicalDurability";
 
     /**
      * 物品最大耐久，-1 表示消耗品
@@ -39,7 +35,7 @@ public class MedicalItem extends Item {
     private final MedicalEffect effect;
 
     public MedicalItem(Properties properties, int maxDurability, int activationTicks, int usageTicks, MedicalEffect effect) {
-        super(properties);
+        super(maxDurability > 0 ? properties.durability(maxDurability) : properties);
         this.maxDurability = maxDurability;
         this.activationTicks = activationTicks;
         this.usageTicks = usageTicks;
@@ -50,7 +46,8 @@ public class MedicalItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (!effect.canApply(player, stack)) {
+        // 任意性质物品跳过 canApply 检查
+        if (!effect.isAnytime() && !effect.canApply(player, stack)) {
             return InteractionResultHolder.fail(stack);
         }
 
@@ -81,22 +78,20 @@ public class MedicalItem extends Item {
     }
 
     /**
-     * 获取当前耐久
+     * 获取当前耐久（采用原版耐久值）
      */
     public int getDurability(ItemStack stack) {
         if (!isDurabilityItem()) return 0;
-        if (!stack.hasTag() || !stack.getTag().contains(DURABILITY_TAG)) {
-            return maxDurability;
-        }
-        return stack.getTag().getInt(DURABILITY_TAG);
+        return stack.getMaxDamage() - stack.getDamageValue();
     }
 
     /**
-     * 设置当前耐久
+     * 设置当前耐久（采用原版耐久值）
      */
     public void setDurability(ItemStack stack, int durability) {
         if (!isDurabilityItem()) return;
-        stack.getOrCreateTag().putInt(DURABILITY_TAG, Math.max(0, Math.min(maxDurability, durability)));
+        int value = Math.max(0, Math.min(maxDurability, durability));
+        stack.setDamageValue(stack.getMaxDamage() - value);
     }
 
     /**

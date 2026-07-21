@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "modernizegameframework:chest_rig_level_1",
+    "modernizegameframework:chest_rig_level_2",
+    "modernizegameframework:chest_rig_level_3",
+    "modernizegameframework:chest_rig_level_4",
+    "modernizegameframework:chest_rig_level_5",
+    "modernizegameframework:chest_rig_level_6"
+  ]
+}

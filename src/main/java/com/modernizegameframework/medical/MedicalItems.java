@@ -18,10 +18,10 @@ public class MedicalItems {
 
     // 消耗品
     public static final RegistryObject<Item> BANDAGE = ITEMS.register("bandage",
-            () -> new MedicalItem(new Item.Properties().stacksTo(16), -1, 20, 0, MedicalEffects.BANDAGE));
+            () -> new MedicalItem(new Item.Properties().stacksTo(1), -1, 20, 0, MedicalEffects.BANDAGE));
 
     public static final RegistryObject<Item> PAINKILLER = ITEMS.register("painkiller",
-            () -> new MedicalItem(new Item.Properties().stacksTo(16), -1, 20, 0, MedicalEffects.PAINKILLER));
+            () -> new MedicalItem(new Item.Properties().stacksTo(1), -1, 20, 20, MedicalEffects.PAINKILLER));
 
     // 耐久型
     public static final RegistryObject<Item> BIG_BANDAGE = ITEMS.register("big_bandage",

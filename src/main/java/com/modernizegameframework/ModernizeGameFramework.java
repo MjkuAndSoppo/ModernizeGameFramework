@@ -6,8 +6,10 @@ import com.modernizegameframework.bodypart.BodyPartNetwork;
 import com.modernizegameframework.medical.MedicalItems;
 import com.modernizegameframework.movement.MovementConfig;
 import com.modernizegameframework.movement.MovementNetwork;
+import com.modernizegameframework.inventory.TarkovInventoryNetwork;
+import com.modernizegameframework.inventory.TarkovInventoryRegistry;
+import com.modernizegameframework.inventory.TarkovInventoryScreen;
 import com.modernizegameframework.securecontainer.SecureContainerConfig;
-import com.modernizegameframework.securecontainer.SecureContainerItem;
 import com.modernizegameframework.securecontainer.SecureContainerNetwork;
 import com.modernizegameframework.securecontainer.SecureContainerRegistry;
 import com.modernizegameframework.securecontainer.SecureContainerScreen;
@@ -49,7 +51,7 @@ public class ModernizeGameFramework
     // Define mod id in a common place for everything to reference
     public static final String MODID = "modernizegameframework";
     // Directly reference a slf4j logger
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
     // Create a Deferred Register to hold Blocks which will all be registered under the "modernizegameframework" namespace
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
     // Create a Deferred Register to hold Items which will all be registered under the "modernizegameframework" namespace
@@ -116,10 +118,18 @@ public class ModernizeGameFramework
         // Register secure container network messages
         SecureContainerNetwork.register();
 
+        // Register tarkov inventory network messages
+        TarkovInventoryNetwork.register();
+
         // Register secure container items, menu types, and creative tabs
         SecureContainerRegistry.ITEMS.register(modEventBus);
         SecureContainerRegistry.MENU_TYPES.register(modEventBus);
         SecureContainerRegistry.CREATIVE_TABS.register(modEventBus);
+
+        // Register tarkov inventory items, menu types, and creative tabs
+        TarkovInventoryRegistry.ITEMS.register(modEventBus);
+        TarkovInventoryRegistry.MENU_TYPES.register(modEventBus);
+        TarkovInventoryRegistry.CREATIVE_TABS.register(modEventBus);
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
@@ -182,6 +192,10 @@ public class ModernizeGameFramework
             // 注册安全箱界面
             net.minecraft.client.gui.screens.MenuScreens.register(
                     SecureContainerRegistry.SECURE_CONTAINER_MENU.get(), SecureContainerScreen::new);
+
+            // 注册塔科夫背包界面
+            net.minecraft.client.gui.screens.MenuScreens.register(
+                    TarkovInventoryRegistry.TARKOV_INVENTORY_MENU.get(), TarkovInventoryScreen::new);
 
             // 安全箱模型直接使用对应颜色的潜影盒模型，无需额外着色
         }

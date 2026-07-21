@@ -493,6 +493,9 @@ public class BodyPartDamageHandler {
      */
     private static void applySecondaryEffects(Player victim, BodyPartType part) {
         BodyPartHelper.getBodyPartCapability(victim).ifPresent(cap -> {
+            if (cap.isDestroyed(part)) {
+                return;
+            }
             if (RANDOM.nextDouble() < Config.BODYPART_BLEED_CHANCE.get()) {
                 cap.setBleedingTicks(part, Config.BODYPART_BLEED_DURATION.get());
             }

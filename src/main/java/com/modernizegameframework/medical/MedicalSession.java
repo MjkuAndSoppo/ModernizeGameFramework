@@ -1,5 +1,6 @@
 package com.modernizegameframework.medical;
 
+import com.modernizegameframework.bodypart.BodyPartNetwork;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -67,8 +68,8 @@ public class MedicalSession {
                 // 使用读条结束：应用效果并结算耐久
                 boolean canContinue = applyEffectAndCheckContinue();
                 settleDurability();
-                if (canContinue) {
-                    // 未满血则重新进入使用读条，实现循环
+                // 只有声明为循环性质且效果返回还能继续时才进入下一次使用读条
+                if (item.getEffect().isLoop() && canContinue) {
                     usageTicksRemaining = item.getUsageTicks();
                     return true;
                 }
@@ -80,9 +81,14 @@ public class MedicalSession {
 
     /**
      * 应用效果并检查是否还能继续治疗
+     * 应用后同步肢节数据到客户端，确保 HUD 及时刷新
      */
     private boolean applyEffectAndCheckContinue() {
-        return item.getEffect().apply(player, stack);
+        boolean canContinue = item.getEffect().apply(player, stack);
+        if (!player.level().isClientSide()) {
+            BodyPartNetwork.syncToClient(player);
+        }
+        return canContinue;
     }
 
     /**
@@ -110,8 +116,12 @@ public class MedicalSession {
     /**
      * 判断读条是否被打断
      * 移动、切换物品、切换视角都会打断
+     * 拥有"无视"性质的物品免疫移动、载具、游泳等打断，但仍要求手持相同物品
      */
     private boolean isInterrupted() {
+        if (item.getEffect().isUnbreakable()) {
+            return false;
+        }
         if (player.isSprinting() || player.isSwimming() || player.isFallFlying()) return true;
         if (player.getVehicle() != null) return true;
         if (player.position().distanceToSqr(startPosition) > 0.001) return true;
