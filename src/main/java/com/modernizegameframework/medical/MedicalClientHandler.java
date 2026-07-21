@@ -43,17 +43,17 @@ public class MedicalClientHandler {
         LocalPlayer player = mc.player;
         if (player == null) {
             session = null;
-            MedicalHudRenderer.setProgress(0.0f, false, "");
+            MedicalHudRenderer.setProgress(0.0f, false, "", false);
             return;
         }
 
         if (!session.tick()) {
             session = null;
-            MedicalHudRenderer.setProgress(0.0f, false, "");
+            MedicalHudRenderer.setProgress(0.0f, false, "", false);
             return;
         }
 
-        MedicalHudRenderer.setProgress(session.getProgress(), true, session.getItemName());
+        MedicalHudRenderer.setProgress(session.getProgress(), true, session.getItemName(), session.isUsagePhase());
     }
 
     @SubscribeEvent
@@ -74,7 +74,7 @@ public class MedicalClientHandler {
      */
     public static void stopSession() {
         session = null;
-        MedicalHudRenderer.setProgress(0.0f, false, "");
+        MedicalHudRenderer.setProgress(0.0f, false, "", false);
     }
 
     /**
@@ -87,8 +87,10 @@ public class MedicalClientHandler {
         private final ItemStack stack;
         private final Vec3 startPosition;
         private final int startSlot;
-        private final int totalTicks;
-        private int elapsedTicks = 0;
+
+        private boolean usagePhase = false;
+        private int activationTicksRemaining;
+        private int usageTicksRemaining;
 
         MedicalClientSession(LocalPlayer player, InteractionHand hand, MedicalItem item, ItemStack stack) {
             this.player = player;
@@ -97,13 +99,11 @@ public class MedicalClientHandler {
             this.stack = stack;
             this.startPosition = player.position();
             this.startSlot = player.getInventory().selected;
-            this.totalTicks = item.getActivationTicks() + item.getUsageTicks();
+            this.activationTicksRemaining = item.getActivationTicks();
+            this.usageTicksRemaining = item.getUsageTicks();
         }
 
         boolean tick() {
-            elapsedTicks++;
-            if (elapsedTicks >= totalTicks) return false;
-
             // 被打断条件：移动、切换物品、物品变更
             if (player.getInventory().selected != startSlot) return false;
             ItemStack current = player.getItemInHand(hand);
@@ -112,11 +112,38 @@ public class MedicalClientHandler {
             if (player.getVehicle() != null) return false;
             if (player.position().distanceToSqr(startPosition) > 0.001) return false;
 
-            return true;
+            if (!usagePhase) {
+                activationTicksRemaining--;
+                if (activationTicksRemaining <= 0) {
+                    usagePhase = true;
+                    usageTicksRemaining = item.getUsageTicks();
+                }
+                return true;
+            } else {
+                usageTicksRemaining--;
+                if (usageTicksRemaining <= 0) {
+                    // 客户端预测：效果已应用，若仍可继续治疗则进入下一循环
+                    if (!item.getEffect().canApply(player, stack)) {
+                        return false;
+                    }
+                    usageTicksRemaining = item.getUsageTicks();
+                }
+                return true;
+            }
         }
 
         float getProgress() {
-            return totalTicks > 0 ? (float) elapsedTicks / totalTicks : 1.0f;
+            if (!usagePhase) {
+                int total = item.getActivationTicks();
+                return total > 0 ? 1.0f - (float) activationTicksRemaining / total : 1.0f;
+            } else {
+                int total = item.getUsageTicks();
+                return total > 0 ? 1.0f - (float) usageTicksRemaining / total : 1.0f;
+            }
+        }
+
+        boolean isUsagePhase() {
+            return usagePhase;
         }
 
         String getItemName() {

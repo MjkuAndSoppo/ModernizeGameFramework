@@ -11,8 +11,11 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +23,8 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.server.ServerLifecycleHooks;
+
+import java.util.Collection;
 
 /**
  * 模组指令注册
@@ -71,23 +76,30 @@ public class ModCommands {
                                 .executes(ModCommands::showStatus))
         );
 
-        // 回满所有在线玩家肢节血量
+        // 回满指定玩家肢节血量，支持目标选择器
         dispatcher.register(
                 Commands.literal("mgfh")
                         .requires(source -> source.hasPermission(2))
-                        .then(Commands.literal("all")
-                                .executes(ModCommands::healAllBodyParts))
+                        .then(Commands.argument("targets", EntityArgument.players())
+                                .executes(ModCommands::healBodyParts))
         );
 
-        // 对所有在线玩家指定部位造成伤害（测试用）
+        // 对指定目标指定部位造成伤害（测试用）
         dispatcher.register(
                 Commands.literal("cutHP")
                         .requires(source -> source.hasPermission(2))
                         .then(Commands.argument("part", StringArgumentType.word())
+                                .suggests(BODY_PART_SUGGESTIONS)
                                 .then(Commands.argument("amount", FloatArgumentType.floatArg(0.0f))
                                         .executes(ModCommands::cutBodyPartHealth)))
         );
     }
+
+    /**
+     * 部位 ID 补全提供者
+     */
+    private static final SuggestionProvider<CommandSourceStack> BODY_PART_SUGGESTIONS = (context, builder) ->
+            SharedSuggestionProvider.suggest(BodyPartType.getAllIds(), builder);
 
     private static int toggle(CommandContext<CommandSourceStack> ctx, String name,
                               boolean enable, net.minecraftforge.common.ForgeConfigSpec.BooleanValue config) {
@@ -107,15 +119,17 @@ public class ModCommands {
         return 1;
     }
 
-    private static int healAllBodyParts(CommandContext<CommandSourceStack> ctx) {
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-        if (server == null) {
-            ctx.getSource().sendFailure(Component.literal("§c服务器未启动"));
+    private static int healBodyParts(CommandContext<CommandSourceStack> ctx) {
+        Collection<ServerPlayer> targets;
+        try {
+            targets = EntityArgument.getPlayers(ctx, "targets");
+        } catch (Exception e) {
+            ctx.getSource().sendFailure(Component.literal("§c目标选择器解析失败"));
             return 0;
         }
 
         int count = 0;
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+        for (ServerPlayer player : targets) {
             BodyPartHelper.healAll(player);
             BodyPartNetwork.syncToClient(player);
             count++;

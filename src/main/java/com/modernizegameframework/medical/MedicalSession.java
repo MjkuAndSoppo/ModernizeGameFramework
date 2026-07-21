@@ -58,22 +58,19 @@ public class MedicalSession {
             activationTicksRemaining--;
             if (activationTicksRemaining <= 0) {
                 phase = Phase.USING;
-                // 进入使用阶段时先应用一次效果，便于循环物品
-                return applyEffectAndCheckContinue();
+                usageTicksRemaining = item.getUsageTicks();
             }
             return true;
         } else {
             usageTicksRemaining--;
-            MedicalEffect effect = item.getEffect();
-            if (effect.isLoop()) {
-                // 循环物品每 tick 应用一次效果
-                boolean canContinue = applyEffectAndCheckContinue();
-                if (!canContinue) return false;
-            }
             if (usageTicksRemaining <= 0) {
-                // 非循环物品在结算时应用效果
-                if (!effect.isLoop()) {
-                    applyEffectAndCheckContinue();
+                // 使用读条结束：应用效果并结算耐久
+                boolean canContinue = applyEffectAndCheckContinue();
+                settleDurability();
+                if (canContinue) {
+                    // 未满血则重新进入使用读条，实现循环
+                    usageTicksRemaining = item.getUsageTicks();
+                    return true;
                 }
                 return false;
             }
@@ -82,10 +79,24 @@ public class MedicalSession {
     }
 
     /**
-     * 应用效果并检查是否需要继续
+     * 应用效果并检查是否还能继续治疗
      */
     private boolean applyEffectAndCheckContinue() {
         return item.getEffect().apply(player, stack);
+    }
+
+    /**
+     * 结算本次使用消耗的耐久
+     */
+    private void settleDurability() {
+        if (item.isDurabilityItem()) {
+            item.consumeDurability(stack, item.getEffect().durabilityCost());
+            if (item.getDurability(stack) <= 0) {
+                stack.shrink(1);
+            }
+        } else {
+            stack.shrink(1);
+        }
     }
 
     /**
@@ -108,21 +119,11 @@ public class MedicalSession {
     }
 
     /**
-     * 结算耐久或消耗物品
+     * 会话结束时的清理
+     * 耐久结算已在 tick 中完成，这里只做中断时的清理
      */
     public void finish(boolean completed) {
-        if (!completed) return;
-        if (item.isDurabilityItem()) {
-            if (!item.consumeDurability(stack, item.getEffect().durabilityCost())) {
-                // 耐久不足时中断，不应该走到这里
-                return;
-            }
-            if (item.getDurability(stack) <= 0) {
-                stack.shrink(1);
-            }
-        } else {
-            stack.shrink(1);
-        }
+        // 中断时不消耗物品；正常完成已在 settleDurability 中处理
     }
 
     public Player getPlayer() {

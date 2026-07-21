@@ -57,4 +57,18 @@ public enum BodyPartType {
         }
         return null;
     }
+
+    /**
+     * 获取所有部位 ID，用于指令补全
+     *
+     * @return 部位 ID 数组
+     */
+    public static String[] getAllIds() {
+        BodyPartType[] values = values();
+        String[] ids = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+            ids[i] = values[i].id;
+        }
+        return ids;
+    }
 }

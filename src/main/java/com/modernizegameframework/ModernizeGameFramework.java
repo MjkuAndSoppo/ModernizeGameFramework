@@ -16,6 +16,7 @@ import com.modernizegameframework.stamina.StaminaConfig;
 import com.modernizegameframework.stamina.StaminaNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
@@ -65,12 +66,12 @@ public class ModernizeGameFramework
     public static final RegistryObject<Item> EXAMPLE_ITEM = ITEMS.register("example_item", () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
             .alwaysEat().nutrition(1).saturationMod(2f).build())));
 
-    // Creates a creative tab with the id "modernizegameframework:example_tab" for the example item, that is placed after the combat tab
-    public static final RegistryObject<CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("example_tab", () -> CreativeModeTab.builder()
+    // 医疗物品创造栏，使用止痛药图标
+    public static final RegistryObject<CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("medical_tab", () -> CreativeModeTab.builder()
+            .title(Component.literal("医疗图标"))
             .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(() -> EXAMPLE_ITEM.get().getDefaultInstance())
+            .icon(() -> MedicalItems.PAINKILLER.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
-                output.accept(EXAMPLE_ITEM.get()); // Add the example item to the tab. For your own tabs, this method is preferred over the event
                 output.accept(MedicalItems.BANDAGE.get());
                 output.accept(MedicalItems.BIG_BANDAGE.get());
                 output.accept(MedicalItems.AI2_MEDKIT.get());

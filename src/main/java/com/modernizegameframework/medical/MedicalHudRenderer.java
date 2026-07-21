@@ -42,16 +42,27 @@ public class MedicalHudRenderer {
      */
     private static String itemName = "";
 
+    /**
+     * 当前读条阶段：true 表示使用读条（绿色），false 表示启用读条（蓝色）
+     */
+    private static boolean usagePhase = false;
+
     private MedicalHudRenderer() {
     }
 
     /**
      * 更新客户端读条状态
+     *
+     * @param progressValue 进度 0-1
+     * @param activeValue   是否激活
+     * @param name          物品名称
+     * @param usage         是否为使用阶段
      */
-    public static void setProgress(float progressValue, boolean activeValue, String name) {
+    public static void setProgress(float progressValue, boolean activeValue, String name, boolean usage) {
         progress = progressValue;
         active = activeValue;
         itemName = name;
+        usagePhase = usage;
     }
 
     @SubscribeEvent
@@ -77,8 +88,9 @@ public class MedicalHudRenderer {
 
         // 背景
         graphics.fill(barLeft, centerY, barRight, centerY + BAR_HEIGHT, 0xFF333333);
-        // 填充
-        graphics.fill(barLeft, centerY, fillRight, centerY + BAR_HEIGHT, 0xFF00CED1);
+        // 填充：启用阶段蓝色，使用阶段绿色
+        int fillColor = usagePhase ? 0xFF00FF00 : 0xFF00CED1;
+        graphics.fill(barLeft, centerY, fillRight, centerY + BAR_HEIGHT, fillColor);
         // 边框
         graphics.renderOutline(barLeft, centerY, BAR_WIDTH, BAR_HEIGHT, 0xFFFFFFFF);
 

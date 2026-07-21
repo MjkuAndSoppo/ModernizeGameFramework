@@ -21,18 +21,18 @@ public final class MedicalEffects {
     }
 
     /**
-     * 绷带：停止一个出血部位，并为其回复 10 血
+     * 绷带：停止一个非黑色出血部位，并为其回复 10 血
      */
     public static final MedicalEffect BANDAGE = new MedicalEffect() {
         @Override
         public boolean canApply(Player player, ItemStack stack) {
-            return hasAnyBleeding(player);
+            return hasAnyBleedingNotDestroyed(player);
         }
 
         @Override
         public boolean apply(Player player, ItemStack stack) {
             return BodyPartHelper.getBodyPartCapability(player).map(cap -> {
-                BodyPartType target = findBleedingPart(player);
+                BodyPartType target = findBleedingNotDestroyedPart(player);
                 if (target == null) return false;
                 cap.setBleedingTicks(target, 0);
                 cap.heal(target, 10.0f);
@@ -52,23 +52,25 @@ public final class MedicalEffects {
     };
 
     /**
-     * 大绷带：停止一个出血部位，所有部位各回 10 血
+     * 大绷带：停止一个非黑色出血部位，所有非黑色部位各回 10 血
      */
     public static final MedicalEffect BIG_BANDAGE = new MedicalEffect() {
         @Override
         public boolean canApply(Player player, ItemStack stack) {
-            return hasAnyBleeding(player) || hasAnyDamagedPart(player);
+            return hasAnyBleedingNotDestroyed(player) || hasAnyDamagedNotDestroyed(player);
         }
 
         @Override
         public boolean apply(Player player, ItemStack stack) {
             return BodyPartHelper.getBodyPartCapability(player).map(cap -> {
-                BodyPartType target = findBleedingPart(player);
+                BodyPartType target = findBleedingNotDestroyedPart(player);
                 if (target != null) {
                     cap.setBleedingTicks(target, 0);
                 }
                 for (BodyPartType type : BodyPartType.values()) {
-                    cap.heal(type, 10.0f);
+                    if (!cap.isDestroyed(type)) {
+                        cap.heal(type, 10.0f);
+                    }
                 }
                 return false;
             }).orElse(false);
@@ -86,21 +88,21 @@ public final class MedicalEffects {
     };
 
     /**
-     * AI-2 急救包：循环随机部位每次回 1 血
+     * AI-2 急救包：循环随机非黑色部位每次回 1 血
      */
     public static final MedicalEffect AI2_MEDKIT = new MedicalEffect() {
         @Override
         public boolean canApply(Player player, ItemStack stack) {
-            return hasAnyDamagedPart(player);
+            return hasAnyDamagedNotDestroyed(player);
         }
 
         @Override
         public boolean apply(Player player, ItemStack stack) {
             return BodyPartHelper.getBodyPartCapability(player).map(cap -> {
-                BodyPartType target = findDamagedPart(player);
+                BodyPartType target = findDamagedNotDestroyedPart(player);
                 if (target == null) return false;
                 cap.heal(target, 1.0f);
-                return hasAnyDamagedPart(player);
+                return hasAnyDamagedNotDestroyed(player);
             }).orElse(false);
         }
 
@@ -116,21 +118,21 @@ public final class MedicalEffects {
     };
 
     /**
-     * IFAK：循环随机部位每次回 1 血（与 AI-2 区别后续可调整）
+     * IFAK：循环随机非黑色部位每次回 1 血
      */
     public static final MedicalEffect IFAK = new MedicalEffect() {
         @Override
         public boolean canApply(Player player, ItemStack stack) {
-            return hasAnyDamagedPart(player);
+            return hasAnyDamagedNotDestroyed(player);
         }
 
         @Override
         public boolean apply(Player player, ItemStack stack) {
             return BodyPartHelper.getBodyPartCapability(player).map(cap -> {
-                BodyPartType target = findDamagedPart(player);
+                BodyPartType target = findDamagedNotDestroyedPart(player);
                 if (target == null) return false;
                 cap.heal(target, 1.0f);
-                return hasAnyDamagedPart(player);
+                return hasAnyDamagedNotDestroyed(player);
             }).orElse(false);
         }
 
@@ -236,12 +238,12 @@ public final class MedicalEffects {
     };
 
     /**
-     * 大止痛药：清除疼痛 + 止痛药效果 + 所有部位回 5 血
+     * 大止痛药：清除疼痛 + 止痛药效果 + 所有非黑色部位回 5 血
      */
     public static final MedicalEffect BIG_PAINKILLER = new MedicalEffect() {
         @Override
         public boolean canApply(Player player, ItemStack stack) {
-            return player.hasEffect(BodyPartEffects.PAIN.get()) || hasAnyDamagedPart(player);
+            return player.hasEffect(BodyPartEffects.PAIN.get()) || hasAnyDamagedNotDestroyed(player);
         }
 
         @Override
@@ -253,7 +255,9 @@ public final class MedicalEffects {
             }
             BodyPartHelper.getBodyPartCapability(player).ifPresent(cap -> {
                 for (BodyPartType type : BodyPartType.values()) {
-                    cap.heal(type, 5.0f);
+                    if (!cap.isDestroyed(type)) {
+                        cap.heal(type, 5.0f);
+                    }
                 }
             });
             return false;
@@ -272,19 +276,19 @@ public final class MedicalEffects {
 
     // ========== 工具方法 ==========
 
-    private static boolean hasAnyBleeding(Player player) {
+    private static boolean hasAnyBleedingNotDestroyed(Player player) {
         return BodyPartHelper.getBodyPartCapability(player).map(cap -> {
             for (BodyPartType type : BodyPartType.values()) {
-                if (cap.getBleedingTicks(type) > 0) return true;
+                if (!cap.isDestroyed(type) && cap.getBleedingTicks(type) > 0) return true;
             }
             return false;
         }).orElse(false);
     }
 
-    private static boolean hasAnyDamagedPart(Player player) {
+    private static boolean hasAnyDamagedNotDestroyed(Player player) {
         return BodyPartHelper.getBodyPartCapability(player).map(cap -> {
             for (BodyPartType type : BodyPartType.values()) {
-                if (cap.getHealth(type) < cap.getMaxHealth(type)) return true;
+                if (!cap.isDestroyed(type) && cap.getHealth(type) < cap.getMaxHealth(type)) return true;
             }
             return false;
         }).orElse(false);
@@ -299,11 +303,11 @@ public final class MedicalEffects {
         }).orElse(false);
     }
 
-    private static BodyPartType findBleedingPart(Player player) {
+    private static BodyPartType findBleedingNotDestroyedPart(Player player) {
         return BodyPartHelper.getBodyPartCapability(player).map(cap -> {
             List<BodyPartType> bleeding = new ArrayList<>();
             for (BodyPartType type : BodyPartType.values()) {
-                if (cap.getBleedingTicks(type) > 0) bleeding.add(type);
+                if (!cap.isDestroyed(type) && cap.getBleedingTicks(type) > 0) bleeding.add(type);
             }
             if (bleeding.isEmpty()) return null;
             // 优先选血量最低的出血部位
@@ -312,11 +316,11 @@ public final class MedicalEffects {
         }).orElse(null);
     }
 
-    private static BodyPartType findDamagedPart(Player player) {
+    private static BodyPartType findDamagedNotDestroyedPart(Player player) {
         return BodyPartHelper.getBodyPartCapability(player).map(cap -> {
             List<BodyPartType> damaged = new ArrayList<>();
             for (BodyPartType type : BodyPartType.values()) {
-                if (cap.getHealth(type) < cap.getMaxHealth(type)) damaged.add(type);
+                if (!cap.isDestroyed(type) && cap.getHealth(type) < cap.getMaxHealth(type)) damaged.add(type);
             }
             if (damaged.isEmpty()) return null;
             return damaged.get(ThreadLocalRandom.current().nextInt(damaged.size()));

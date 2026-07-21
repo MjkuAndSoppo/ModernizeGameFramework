@@ -86,8 +86,17 @@ public class BodyPartEvents {
             BodyPartPenaltyHandler.tickLegStaminaCost(player, cap);
 
             // 腿黑时强制取消疾跑（与服务端体力耗尽逻辑保持一致）
-            if (BodyPartPenaltyHandler.isLegDestroyed(cap) && player.isSprinting()) {
+            // 止痛效果下允许疾跑，但会在下方结算黑腿疾跑扣血
+            boolean hasPainkiller = player.hasEffect(BodyPartEffects.PAINKILLER.get());
+            if (BodyPartPenaltyHandler.isLegDestroyed(cap) && player.isSprinting() && !hasPainkiller) {
                 player.setSprinting(false);
+            }
+
+            // 止痛效果下腿黑疾跑扣血：每 20 tick 对每条黑腿造成 1 点伤害并触发扩散
+            if (hasPainkiller && player.isSprinting() && BodyPartPenaltyHandler.isLegDestroyed(cap)) {
+                if (player.tickCount % 20 == 0) {
+                    applySprintDamageOnDestroyedLegs(player, cap);
+                }
             }
 
             // 开关状态变化时统一处理所有在线玩家
@@ -152,6 +161,21 @@ public class BodyPartEvents {
             cap.healAll();
         });
         BodyPartNetwork.syncToClient(player);
+    }
+
+    /**
+     * 对玩家每条已黑掉的腿造成 1 点伤害，触发现有伤害扩散规则
+     *
+     * @param player 玩家
+     * @param cap    肢节血量能力
+     */
+    private static void applySprintDamageOnDestroyedLegs(Player player, BodyPartCapability cap) {
+        if (cap.isDestroyed(BodyPartType.LEFT_LEG)) {
+            cap.applyDamage(BodyPartType.LEFT_LEG, 1.0f);
+        }
+        if (cap.isDestroyed(BodyPartType.RIGHT_LEG)) {
+            cap.applyDamage(BodyPartType.RIGHT_LEG, 1.0f);
+        }
     }
 
     /**
