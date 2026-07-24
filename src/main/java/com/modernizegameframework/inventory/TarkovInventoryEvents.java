@@ -23,17 +23,33 @@ import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.NetworkHooks;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.UUID;
+
 /**
  * 塔科夫背包系统事件监听器
  * 负责拦截原版背包/容器打开、玩家登录与重生数据同步
  */
 public class TarkovInventoryEvents {
+
+    /** 记录需要重建塔科夫背包界面的玩家 UUID，由服务端 tick 事件延迟处理 */
+    private static final Map<UUID, Boolean> pendingRebuild = new HashMap<>();
+
+    /**
+     * 标记指定玩家需要在下一服务端 tick 重建塔科夫背包界面
+     */
+    public static void markForRebuild(UUID playerId) {
+        pendingRebuild.put(playerId, Boolean.TRUE);
+    }
 
     /**
      * 服务端事件：打开容器方块时替换为塔科夫背包界面
@@ -59,6 +75,28 @@ public class TarkovInventoryEvents {
             Player newPlayer = event.getEntity();
             if (newPlayer instanceof ServerPlayer serverPlayer) {
                 TarkovInventoryNetwork.syncAll(serverPlayer);
+            }
+        }
+
+        /**
+         * 服务端 tick 结束时处理被标记需要重建界面的玩家
+         * 延迟一 tick 重建可避免在 slot 操作过程中直接切换菜单导致的状态异常
+         */
+        @SubscribeEvent
+        public static void onServerTick(TickEvent.ServerTickEvent event) {
+            if (event.phase != TickEvent.Phase.END) {
+                return;
+            }
+            Iterator<Map.Entry<UUID, Boolean>> iterator = pendingRebuild.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<UUID, Boolean> entry = iterator.next();
+                ServerPlayer player = event.getServer().getPlayerList().getPlayer(entry.getKey());
+                if (player != null && player.containerMenu instanceof TarkovInventoryMenu menu) {
+                    NetworkHooks.openScreen(player,
+                            new TarkovInventoryMenuProvider(menu.getExternalContainer(), menu.getExternalTitle()),
+                            TarkovInventoryMenuProvider.extraDataWriter(menu.getContainerSlotCount(), menu.getExternalTitle()));
+                }
+                iterator.remove();
             }
         }
 

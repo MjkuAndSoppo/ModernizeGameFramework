@@ -121,10 +121,9 @@ public class ModernizeGameFramework
         // Register tarkov inventory network messages
         TarkovInventoryNetwork.register();
 
-        // Register secure container items, menu types, and creative tabs
+        // Register secure container items and menu types
         SecureContainerRegistry.ITEMS.register(modEventBus);
         SecureContainerRegistry.MENU_TYPES.register(modEventBus);
-        SecureContainerRegistry.CREATIVE_TABS.register(modEventBus);
 
         // Register tarkov inventory items, menu types, and creative tabs
         TarkovInventoryRegistry.ITEMS.register(modEventBus);

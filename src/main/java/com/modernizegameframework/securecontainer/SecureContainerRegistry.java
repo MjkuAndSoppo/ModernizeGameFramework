@@ -1,9 +1,7 @@
 package com.modernizegameframework.securecontainer;
 
 import com.modernizegameframework.ModernizeGameFramework;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
@@ -31,10 +29,6 @@ public class SecureContainerRegistry {
     public static final DeferredRegister<MenuType<?>> MENU_TYPES =
             DeferredRegister.create(ForgeRegistries.MENU_TYPES, ModernizeGameFramework.MODID);
 
-    /** 创造模式标签页注册器 */
-    public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS =
-            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, ModernizeGameFramework.MODID);
-
     // === 五种安全箱物品 ===
 
     public static final RegistryObject<Item> ALPHA = ITEMS.register("secure_container_alpha",
@@ -58,22 +52,5 @@ public class SecureContainerRegistry {
             MENU_TYPES.register("secure_container_menu",
                     () -> IForgeMenuType.create(SecureContainerMenu::new));
 
-    // === 创造模式标签页 ===
 
-    public static final RegistryObject<CreativeModeTab> SECURE_CONTAINER_TAB = CREATIVE_TABS.register(
-            "secure_container_tab",
-            () -> CreativeModeTab.builder()
-                    .title(net.minecraft.network.chat.Component.translatable(
-                            "itemGroup.modernizegameframework.secure_container"))
-                    .icon(() -> new net.minecraft.world.item.ItemStack(ALPHA.get()))
-                    .displayItems((params, output) -> {
-                        output.accept(ALPHA.get());
-                        output.accept(BETA.get());
-                        output.accept(GAMMA.get());
-                        output.accept(KAPPA.get());
-                        output.accept(THETA.get());
-                    })
-                    .build());
-
-    private SecureContainerRegistry() {}
 }

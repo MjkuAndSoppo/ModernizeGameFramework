@@ -60,7 +60,7 @@ public class TarkovInventoryRegistry {
             "equipment_tab",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.modernizegameframework.equipment"))
-                    .icon(() -> CHEST_RIG_LEVEL_6.get().getDefaultInstance())
+                    .icon(() -> new net.minecraft.world.item.ItemStack(SecureContainerRegistry.ALPHA.get()))
                     .displayItems((params, output) -> {
                         output.accept(CHEST_RIG_LEVEL_1.get());
                         output.accept(CHEST_RIG_LEVEL_2.get());
