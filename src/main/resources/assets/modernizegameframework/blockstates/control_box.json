@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "modernizegameframework:block/control_box"
+    }
+  }
+}

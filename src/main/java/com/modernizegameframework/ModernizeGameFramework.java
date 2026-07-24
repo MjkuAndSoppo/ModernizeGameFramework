@@ -3,6 +3,8 @@ package com.modernizegameframework;
 import com.mojang.logging.LogUtils;
 import com.modernizegameframework.bodypart.BodyPartEffects;
 import com.modernizegameframework.bodypart.BodyPartNetwork;
+import com.modernizegameframework.hollowhouse.HollowHouseConfig;
+import com.modernizegameframework.hollowhouse.HollowHouseRegistry;
 import com.modernizegameframework.medical.MedicalItems;
 import com.modernizegameframework.movement.MovementConfig;
 import com.modernizegameframework.movement.MovementNetwork;
@@ -100,6 +102,10 @@ public class ModernizeGameFramework
         // Register the Deferred Register to the mod event bus so tabs get registered
         CREATIVE_MODE_TABS.register(modEventBus);
 
+        // Register hollow house blocks and items
+        HollowHouseRegistry.BLOCKS.register(modEventBus);
+        HollowHouseRegistry.ITEMS.register(modEventBus);
+
         // Register the max stamina attribute deferred register
         MaxStaminaAttribute.ATTRIBUTES.register(modEventBus);
 
@@ -147,6 +153,9 @@ public class ModernizeGameFramework
 
         // Register secure container config with a separate file name
         context.registerConfig(ModConfig.Type.COMMON, SecureContainerConfig.SPEC, "modernizegameframework-securecontainer.toml");
+
+        // Register hollow house config with a separate file name
+        context.registerConfig(ModConfig.Type.COMMON, HollowHouseConfig.SPEC, "modernizegameframework-hollowhouse.toml");
     }
 
     private void commonSetup(final FMLCommonSetupEvent event)

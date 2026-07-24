@@ -44,5 +44,9 @@
   "gui.modernizegameframework.tarkov_inventory.status.hunger": "饥饿",
   "gui.modernizegameframework.tarkov_inventory.status.thirst": "口渴",
   "gui.modernizegameframework.tarkov_inventory.status.weight": "重量",
-  "gui.modernizegameframework.tarkov_inventory.coming_soon": "%s 功能尚未开放"
+  "gui.modernizegameframework.tarkov_inventory.coming_soon": "%s 功能尚未开放",
+  "block.modernizegameframework.hollow_house_portal": "藏身处入口",
+  "block.modernizegameframework.control_box": "控制箱",
+  "item.modernizegameframework.hollow_house_portal": "藏身处入口",
+  "item.modernizegameframework.control_box": "控制箱"
 }

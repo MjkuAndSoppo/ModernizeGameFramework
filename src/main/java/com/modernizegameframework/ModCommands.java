@@ -4,6 +4,9 @@ import com.modernizegameframework.bodypart.BodyPartEvents;
 import com.modernizegameframework.bodypart.BodyPartHelper;
 import com.modernizegameframework.bodypart.BodyPartNetwork;
 import com.modernizegameframework.bodypart.BodyPartType;
+import com.modernizegameframework.hollowhouse.HollowHouseConfig;
+import com.modernizegameframework.hollowhouse.HollowHouseData;
+import com.modernizegameframework.hollowhouse.HollowHouseDimensionManager;
 import com.modernizegameframework.movement.MovementConfig;
 import com.modernizegameframework.securecontainer.SecureContainerConfig;
 import com.modernizegameframework.stamina.StaminaConfig;
@@ -72,8 +75,22 @@ public class ModCommands {
                                         .executes(ctx -> toggleBodyPart(ctx, true)))
                                 .then(Commands.literal("off")
                                         .executes(ctx -> toggleBodyPart(ctx, false))))
+                        .then(Commands.literal("HollowHouse")
+                                .then(Commands.literal("on")
+                                        .executes(ctx -> toggleHollowHouse(ctx, true)))
+                                .then(Commands.literal("off")
+                                        .executes(ctx -> toggleHollowHouse(ctx, false))))
                         .then(Commands.literal("status")
                                 .executes(ModCommands::showStatus))
+        );
+
+        // 藏身处邀请命令
+        dispatcher.register(
+                Commands.literal("hh")
+                        .requires(source -> source.hasPermission(2))
+                        .then(Commands.literal("invite")
+                                .then(Commands.argument("target", EntityArgument.player())
+                                        .executes(ModCommands::inviteToHollowHouse)))
         );
 
         // 回满指定玩家肢节血量，支持目标选择器
@@ -115,6 +132,44 @@ public class ModCommands {
         BodyPartEvents.updateAllPlayers(enable);
         ctx.getSource().sendSuccess(
                 () -> Component.literal("§a肢节血量系统 已" + (enable ? "§e开启" : "§c关闭")),
+                true);
+        return 1;
+    }
+
+    private static int toggleHollowHouse(CommandContext<CommandSourceStack> ctx, boolean enable) {
+        HollowHouseConfig.ENABLED.set(enable);
+        ctx.getSource().sendSuccess(
+                () -> Component.literal("§a藏身处系统 已" + (enable ? "§e开启" : "§c关闭")),
+                true);
+        return 1;
+    }
+
+    private static int inviteToHollowHouse(CommandContext<CommandSourceStack> ctx) {
+        ServerPlayer source;
+        try {
+            source = ctx.getSource().getPlayerOrException();
+        } catch (Exception e) {
+            ctx.getSource().sendFailure(Component.literal("§c该命令只能由玩家执行"));
+            return 0;
+        }
+
+        ServerPlayer target;
+        try {
+            target = EntityArgument.getPlayer(ctx, "target");
+        } catch (Exception e) {
+            ctx.getSource().sendFailure(Component.literal("§c目标玩家解析失败"));
+            return 0;
+        }
+
+        HollowHouseData data = HollowHouseDimensionManager.getData(source);
+        if (data == null) {
+            ctx.getSource().sendFailure(Component.literal("§c无法获取藏身处数据"));
+            return 0;
+        }
+
+        data.invitePlayer(target.getUUID());
+        ctx.getSource().sendSuccess(
+                () -> Component.literal("§a已邀请 §e" + target.getName().getString() + " §a进入你的藏身处"),
                 true);
         return 1;
     }
@@ -178,13 +233,15 @@ public class ModCommands {
         boolean bhop = MovementConfig.ENABLED.get();
         boolean stamina = StaminaConfig.ENABLED.get();
         boolean bodypart = Config.BODYPART_ENABLED.get();
+        boolean hollowHouse = HollowHouseConfig.ENABLED.get();
 
         ctx.getSource().sendSuccess(() -> Component.literal(
                 "§6===== MGF 功能状态 =====\n" +
                 "§f安全箱: " + (sc ? "§a开启" : "§c关闭") + "\n" +
                 "§f连跳/移动: " + (bhop ? "§a开启" : "§c关闭") + "\n" +
                 "§f体力: " + (stamina ? "§a开启" : "§c关闭") + "\n" +
-                "§f肢节血量: " + (bodypart ? "§a开启" : "§c关闭")), false);
+                "§f肢节血量: " + (bodypart ? "§a开启" : "§c关闭") + "\n" +
+                "§f藏身处: " + (hollowHouse ? "§a开启" : "§c关闭")), false);
         return 1;
     }
 }

@@ -1,6 +1,7 @@
 package com.modernizegameframework.inventory;
 
 import com.modernizegameframework.ModernizeGameFramework;
+import com.modernizegameframework.hollowhouse.HollowHouseRegistry;
 import com.modernizegameframework.securecontainer.SecureContainerRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -76,6 +77,7 @@ public class TarkovInventoryRegistry {
                         output.accept(SecureContainerRegistry.GAMMA.get());
                         output.accept(SecureContainerRegistry.KAPPA.get());
                         output.accept(SecureContainerRegistry.THETA.get());
+                        output.accept(HollowHouseRegistry.HOLLOW_HOUSE_PORTAL_ITEM.get());
                     })
                     .build());
 
