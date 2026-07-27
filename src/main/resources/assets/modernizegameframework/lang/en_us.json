@@ -47,6 +47,10 @@
   "gui.modernizegameframework.tarkov_inventory.coming_soon": "%s feature is not available yet",
   "block.modernizegameframework.hollow_house_portal": "Hollow House Portal",
   "block.modernizegameframework.control_box": "Control Box",
+  "block.modernizegameframework.storehouse": "Storehouse",
+  "block.modernizegameframework.medical_station": "Medical Station",
   "item.modernizegameframework.hollow_house_portal": "Hollow House Portal",
-  "item.modernizegameframework.control_box": "Control Box"
+  "item.modernizegameframework.control_box": "Control Box",
+  "item.modernizegameframework.storehouse": "Storehouse",
+  "item.modernizegameframework.medical_station": "Medical Station"
 }

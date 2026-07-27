@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
@@ -110,6 +111,46 @@ public class HollowHouseEvents {
 
         if (y < 0 || HollowHouseDimensionManager.isOutsideHollowHouseArea(center, x, y, z)) {
             HollowHouseDimensionManager.teleportToHollowHouseCenter(player, center);
+        }
+
+        // 医疗站生产任务每秒推进一次（每 20 tick）
+        tickMedicalTasks(player, data);
+    }
+
+    /**
+     * 医疗站任务 tick 计数器，按玩家维度索引
+     */
+    private static final java.util.Map<java.util.UUID, Integer> medicalTaskTickCounters = new java.util.HashMap<>();
+
+    /**
+     * 推进医疗站生产任务进度
+     */
+    private static void tickMedicalTasks(ServerPlayer player, HollowHouseData data) {
+        int counter = medicalTaskTickCounters.getOrDefault(player.getUUID(), 0) + 1;
+        medicalTaskTickCounters.put(player.getUUID(), counter);
+        if (counter < 20) {
+            return;
+        }
+        medicalTaskTickCounters.put(player.getUUID(), 0);
+
+        java.util.Iterator<MedicalTask> iterator = data.getMedicalTasks().iterator();
+        boolean changed = false;
+        while (iterator.hasNext()) {
+            MedicalTask task = iterator.next();
+            ItemStack output = task.tick();
+            if (!output.isEmpty()) {
+                // 将产出的医疗物品放入仓库
+                HollowHouseStorehouseHelper.addItem(data, output);
+                changed = true;
+            }
+            if (task.isFinished()) {
+                iterator.remove();
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            MedicalStationNetwork.syncTasks(player);
         }
     }
 

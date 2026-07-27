@@ -78,6 +78,9 @@ public class TarkovInventoryRegistry {
                         output.accept(SecureContainerRegistry.KAPPA.get());
                         output.accept(SecureContainerRegistry.THETA.get());
                         output.accept(HollowHouseRegistry.HOLLOW_HOUSE_PORTAL_ITEM.get());
+                        output.accept(HollowHouseRegistry.CONTROL_BOX_ITEM.get());
+                        output.accept(HollowHouseRegistry.STOREHOUSE_ITEM.get());
+                        output.accept(HollowHouseRegistry.MEDICAL_STATION_ITEM.get());
                     })
                     .build());
 

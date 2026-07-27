@@ -391,6 +391,7 @@ public class TarkovInventoryScreen extends AbstractContainerScreen<TarkovInvento
         if (isRightPanelSlot(slot) && !isSlotVisibleInRightPanel(slot)) {
             return;
         }
+        boolean scissor = applyPanelScissor(graphics, slot);
         int visualSize = getSlotVisualSize(slot);
         if (visualSize > 16) {
             // 对放大后的槽位应用等比缩放，使物品图标与槽位同步放大
@@ -404,6 +405,30 @@ public class TarkovInventoryScreen extends AbstractContainerScreen<TarkovInvento
         } else {
             super.renderSlot(graphics, slot);
         }
+        if (scissor) {
+            graphics.disableScissor();
+        }
+    }
+
+    /**
+     * 对属于可滚动面板的槽位启用剪刀裁剪，确保槽位不会渲染到面板边界之外。
+     *
+     * @return 是否启用了剪刀裁剪；调用方需要在渲染结束后调用 disableScissor
+     */
+    private boolean applyPanelScissor(GuiGraphics graphics, Slot slot) {
+        if (isMiddlePanelSlot(slot)) {
+            graphics.enableScissor(middleScrollPanel.getX(), middleScrollPanel.getY(),
+                    middleScrollPanel.getX() + middleScrollPanel.getWidth(),
+                    middleScrollPanel.getY() + middleScrollPanel.getHeight());
+            return true;
+        }
+        if (isRightPanelSlot(slot)) {
+            graphics.enableScissor(rightScrollPanel.getX(), rightScrollPanel.getY(),
+                    rightScrollPanel.getX() + rightScrollPanel.getWidth(),
+                    rightScrollPanel.getY() + rightScrollPanel.getHeight());
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -454,12 +479,16 @@ public class TarkovInventoryScreen extends AbstractContainerScreen<TarkovInvento
         if (isRightPanelSlot(slot) && !isSlotVisibleInRightPanel(slot)) {
             return;
         }
+        boolean scissor = applyPanelScissor(graphics, slot);
         int size = getSlotVisualSize(slot);
         int x = this.leftPos + slot.x;
         int y = this.topPos + slot.y;
         // 1.20.1 原版高亮框使用 HOVER_ITEM_BLIT_OFFSET（200），在其之上绘制即可覆盖
         int z = 200;
         graphics.fillGradient(x, y, x + size, y + size, -2130706433, -2130706433, z);
+        if (scissor) {
+            graphics.disableScissor();
+        }
     }
 
     /**
@@ -473,10 +502,14 @@ public class TarkovInventoryScreen extends AbstractContainerScreen<TarkovInvento
             if (isRightPanelSlot(slot) && !isSlotVisibleInRightPanel(slot)) {
                 continue;
             }
+            boolean scissor = applyPanelScissor(graphics, slot);
             int slotSize = getSlotVisualSize(slot);
             int x = this.leftPos + slot.x;
             int y = this.topPos + slot.y;
             graphics.renderOutline(x, y, slotSize, slotSize, BORDER_COLOR);
+            if (scissor) {
+                graphics.disableScissor();
+            }
         }
     }
 
@@ -492,11 +525,15 @@ public class TarkovInventoryScreen extends AbstractContainerScreen<TarkovInvento
                 continue;
             }
             if (menu.isLockedSlot(slot)) {
+                boolean scissor = applyPanelScissor(graphics, slot);
                 int slotSize = getSlotVisualSize(slot);
                 int x = this.leftPos + slot.x;
                 int y = this.topPos + slot.y;
                 graphics.fill(x, y, x + slotSize, y + slotSize, LOCKED_OVERLAY);
                 graphics.drawCenteredString(this.font, "X", x + slotSize / 2, y + slotSize / 2 - 4, 0xFF888888);
+                if (scissor) {
+                    graphics.disableScissor();
+                }
             }
         }
     }

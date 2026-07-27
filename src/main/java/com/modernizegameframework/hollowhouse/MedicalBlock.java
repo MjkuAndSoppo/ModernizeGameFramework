@@ -1,6 +1,7 @@
 package com.modernizegameframework.hollowhouse;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -12,12 +13,12 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 藏身处控制箱方块
- * 右键打开工作方块管理 UI，仅藏身处房主可操作
+ * 藏身处医疗站方块
+ * 右键打开医疗站界面，仅能在藏身处维度内触发。
  */
-public class HollowHouseControlBoxBlock extends Block {
+public class MedicalBlock extends Block {
 
-    public HollowHouseControlBoxBlock(Properties properties) {
+    public MedicalBlock(Properties properties) {
         super(properties);
     }
 
@@ -38,7 +39,7 @@ public class HollowHouseControlBoxBlock extends Block {
             return InteractionResult.PASS;
         }
 
-        // 控制箱仅在藏身处维度内生效
+        // 工作方块仅在藏身处维度内生效
         if (level.dimension() != HollowHouseDimensionManager.HOLLOW_HOUSE_DIMENSION) {
             return InteractionResult.PASS;
         }
@@ -48,13 +49,14 @@ public class HollowHouseControlBoxBlock extends Block {
             return InteractionResult.PASS;
         }
 
-        // 仅房主可打开控制箱 UI
-        if (!serverPlayer.getUUID().equals(data.getOwnerId())) {
-            return InteractionResult.PASS;
+        int medicalLevel = data.getWorkBlockLevel(HollowHouseWorkBlockType.MEDICAL.getId());
+        if (medicalLevel <= 0) {
+            player.displayClientMessage(Component.literal("§c医疗站尚未解锁，请在控制箱中解锁"), true);
+            return InteractionResult.CONSUME;
         }
 
-        // 打开工作方块管理界面
-        HollowHouseWorkBlockNetwork.openScreen(serverPlayer, data.getWorkBlockLevels());
+        // 打开医疗站界面
+        MedicalStationNetwork.openScreen(serverPlayer, medicalLevel);
 
         return InteractionResult.CONSUME;
     }

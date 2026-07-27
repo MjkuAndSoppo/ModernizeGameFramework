@@ -50,5 +50,29 @@ public class HollowHouseRegistry {
     public static final RegistryObject<Item> CONTROL_BOX_ITEM = ITEMS.register("control_box",
             () -> new BlockItem(CONTROL_BOX.get(), new Item.Properties()));
 
+    // 仓库方块
+    public static final RegistryObject<Block> STOREHOUSE = BLOCKS.register("storehouse",
+            () -> new StorehouseBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_BROWN)
+                    .strength(1.5F, 6.0F)
+                    .sound(SoundType.WOOD)
+                    .noOcclusion()));
+
+    // 仓库物品
+    public static final RegistryObject<Item> STOREHOUSE_ITEM = ITEMS.register("storehouse",
+            () -> new BlockItem(STOREHOUSE.get(), new Item.Properties()));
+
+    // 医疗站方块
+    public static final RegistryObject<Block> MEDICAL_STATION = BLOCKS.register("medical_station",
+            () -> new MedicalBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_RED)
+                    .strength(1.5F, 6.0F)
+                    .sound(SoundType.WOOD)
+                    .noOcclusion()));
+
+    // 医疗站物品
+    public static final RegistryObject<Item> MEDICAL_STATION_ITEM = ITEMS.register("medical_station",
+            () -> new BlockItem(MEDICAL_STATION.get(), new Item.Properties()));
+
     private HollowHouseRegistry() {}
 }

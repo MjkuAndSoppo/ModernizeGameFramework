@@ -4,9 +4,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -26,10 +32,22 @@ public class HollowHouseDataImpl implements HollowHouseData {
     private final Set<UUID> invitedPlayers = new HashSet<>();
     private boolean controlBoxGiven = false;
     private boolean platformGenerated = false;
+    private final Map<String, Integer> workBlockLevels = new HashMap<>();
     @Nullable
     private BlockPos portalPos = null;
     @Nullable
     private UUID ownerId = null;
+
+    /**
+     * 仓库容器：最大容量为 4 级时的 55 行 × 8 列 = 440 格
+     */
+    private final SimpleContainer storehouseInventory = new SimpleContainer(
+            HollowHouseStorehouseHelper.getMaxStorehouseSlots());
+
+    /**
+     * 医疗站生产任务列表
+     */
+    private final List<MedicalTask> medicalTasks = new ArrayList<>();
 
     @Override
     public int getChunkX() {
@@ -151,6 +169,25 @@ public class HollowHouseDataImpl implements HollowHouseData {
         this.portalPos = pos;
     }
 
+    @Override
+    public Map<String, Integer> getWorkBlockLevels() {
+        return workBlockLevels;
+    }
+
+    @Override
+    public int getWorkBlockLevel(String workBlockId) {
+        return workBlockLevels.getOrDefault(workBlockId, 0);
+    }
+
+    @Override
+    public void setWorkBlockLevel(String workBlockId, int level) {
+        if (level <= 0) {
+            workBlockLevels.remove(workBlockId);
+        } else {
+            workBlockLevels.put(workBlockId, level);
+        }
+    }
+
     @Nullable
     @Override
     public UUID getOwnerId() {
@@ -185,6 +222,12 @@ public class HollowHouseDataImpl implements HollowHouseData {
         tag.putBoolean("controlBoxGiven", controlBoxGiven);
         tag.putBoolean("platformGenerated", platformGenerated);
 
+        CompoundTag workBlocksTag = new CompoundTag();
+        for (Map.Entry<String, Integer> entry : workBlockLevels.entrySet()) {
+            workBlocksTag.putInt(entry.getKey(), entry.getValue());
+        }
+        tag.put("workBlockLevels", workBlocksTag);
+
         if (portalPos != null) {
             tag.putInt("portalX", portalPos.getX());
             tag.putInt("portalY", portalPos.getY());
@@ -194,6 +237,16 @@ public class HollowHouseDataImpl implements HollowHouseData {
         if (ownerId != null) {
             tag.putUUID("ownerId", ownerId);
         }
+
+        tag.put("storehouseInventory", saveStorehouseInventory());
+
+        CompoundTag medicalTasksTag = new CompoundTag();
+        ListTag taskList = new ListTag();
+        for (int i = 0; i < medicalTasks.size(); i++) {
+            taskList.add(medicalTasks.get(i).serializeNBT());
+        }
+        medicalTasksTag.put("Tasks", taskList);
+        tag.put("medicalTasks", medicalTasksTag);
 
         return tag;
     }
@@ -221,6 +274,14 @@ public class HollowHouseDataImpl implements HollowHouseData {
         controlBoxGiven = tag.getBoolean("controlBoxGiven");
         platformGenerated = tag.getBoolean("platformGenerated");
 
+        workBlockLevels.clear();
+        if (tag.contains("workBlockLevels", Tag.TAG_COMPOUND)) {
+            CompoundTag workBlocksTag = tag.getCompound("workBlockLevels");
+            for (String key : workBlocksTag.getAllKeys()) {
+                workBlockLevels.put(key, workBlocksTag.getInt(key));
+            }
+        }
+
         if (tag.contains("portalX")) {
             portalPos = new BlockPos(
                     tag.getInt("portalX"),
@@ -234,6 +295,80 @@ public class HollowHouseDataImpl implements HollowHouseData {
             ownerId = tag.getUUID("ownerId");
         } else {
             ownerId = null;
+        }
+
+        if (tag.contains("storehouseInventory", Tag.TAG_COMPOUND)) {
+            loadStorehouseInventory(tag.getCompound("storehouseInventory"));
+        }
+
+        medicalTasks.clear();
+        if (tag.contains("medicalTasks", Tag.TAG_COMPOUND)) {
+            CompoundTag medicalTasksTag = tag.getCompound("medicalTasks");
+            if (medicalTasksTag.contains("Tasks", Tag.TAG_LIST)) {
+                ListTag taskList = medicalTasksTag.getList("Tasks", Tag.TAG_COMPOUND);
+                for (int i = 0; i < taskList.size(); i++) {
+                    MedicalTask task = MedicalTask.deserializeNBT(taskList.getCompound(i));
+                    if (task != null) {
+                        medicalTasks.add(task);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public SimpleContainer getStorehouseInventory() {
+        return storehouseInventory;
+    }
+
+    @Override
+    public void loadStorehouseInventory(CompoundTag tag) {
+        storehouseInventory.clearContent();
+        if (!tag.contains("Items", Tag.TAG_LIST)) {
+            return;
+        }
+        ListTag items = tag.getList("Items", Tag.TAG_COMPOUND);
+        for (int i = 0; i < items.size(); i++) {
+            CompoundTag itemTag = items.getCompound(i);
+            int slot = itemTag.getByte("Slot") & 0xFF;
+            if (slot >= 0 && slot < storehouseInventory.getContainerSize()) {
+                storehouseInventory.setItem(slot, ItemStack.of(itemTag));
+            }
+        }
+    }
+
+    @Override
+    public CompoundTag saveStorehouseInventory() {
+        CompoundTag tag = new CompoundTag();
+        ListTag items = new ListTag();
+        for (int i = 0; i < storehouseInventory.getContainerSize(); i++) {
+            ItemStack stack = storehouseInventory.getItem(i);
+            if (!stack.isEmpty()) {
+                CompoundTag itemTag = new CompoundTag();
+                itemTag.putByte("Slot", (byte) i);
+                stack.save(itemTag);
+                items.add(itemTag);
+            }
+        }
+        tag.put("Items", items);
+        return tag;
+    }
+
+    @Override
+    public List<MedicalTask> getMedicalTasks() {
+        return new ArrayList<>(medicalTasks);
+    }
+
+    @Override
+    public void addMedicalTask(MedicalRecipe recipe, int amount) {
+        medicalTasks.add(new MedicalTask(recipe, amount));
+    }
+
+    @Override
+    public void setMedicalTasks(List<MedicalTask> tasks) {
+        medicalTasks.clear();
+        if (tasks != null) {
+            medicalTasks.addAll(tasks);
         }
     }
 }

@@ -5,6 +5,8 @@ import com.modernizegameframework.bodypart.BodyPartEffects;
 import com.modernizegameframework.bodypart.BodyPartNetwork;
 import com.modernizegameframework.hollowhouse.HollowHouseConfig;
 import com.modernizegameframework.hollowhouse.HollowHouseRegistry;
+import com.modernizegameframework.hollowhouse.HollowHouseWorkBlockNetwork;
+import com.modernizegameframework.hollowhouse.MedicalStationNetwork;
 import com.modernizegameframework.medical.MedicalItems;
 import com.modernizegameframework.movement.MovementConfig;
 import com.modernizegameframework.movement.MovementNetwork;
@@ -72,7 +74,7 @@ public class ModernizeGameFramework
 
     // 医疗物品创造栏，使用止痛药图标
     public static final RegistryObject<CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("medical_tab", () -> CreativeModeTab.builder()
-            .title(Component.literal("医疗图标"))
+            .title(Component.literal("医疗物品"))
             .withTabsBefore(CreativeModeTabs.COMBAT)
             .icon(() -> MedicalItems.PAINKILLER.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
@@ -126,6 +128,12 @@ public class ModernizeGameFramework
 
         // Register tarkov inventory network messages
         TarkovInventoryNetwork.register();
+
+        // Register hollow house work block network messages
+        HollowHouseWorkBlockNetwork.register();
+
+        // Register medical station network messages
+        MedicalStationNetwork.register();
 
         // Register secure container items and menu types
         SecureContainerRegistry.ITEMS.register(modEventBus);
