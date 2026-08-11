@@ -13,22 +13,34 @@ public enum HollowHouseWorkBlockType {
     /**
      * 仓库
      */
-    STOREHOUSE("storehouse", "仓库", 4, 0, new int[]{3, 5, 9}),
+    STOREHOUSE("storehouse", "仓库", "no", 4, 0, new int[]{3, 5, 9}),
 
     /**
      * 医疗站
      */
-    MEDICAL("medical", "医疗站", 3, 15, new int[]{15, 20});
+    MEDICAL("medical", "医疗站", "yes", 3, 15, new int[]{15, 20}),
+
+    /**
+     * 供电站
+     */
+    POWER("power", "供电站", "no", 3, 20, new int[]{10, 15}),
+
+    /**
+     * 照明
+     */
+    LIGHTING("lighting", "照明", "yes", 3, 15, new int[]{15, 20});
 
     private final String id;
     private final String displayName;
+    private final String requiresPower;
     private final int maxLevel;
     private final int unlockCost;
     private final int[] upgradeCosts;
 
-    HollowHouseWorkBlockType(String id, String displayName, int maxLevel, int unlockCost, int[] upgradeCosts) {
+    HollowHouseWorkBlockType(String id, String displayName, String requiresPower, int maxLevel, int unlockCost, int[] upgradeCosts) {
         this.id = id;
         this.displayName = displayName;
+        this.requiresPower = requiresPower;
         this.maxLevel = maxLevel;
         this.unlockCost = unlockCost;
         this.upgradeCosts = upgradeCosts;
@@ -46,6 +58,21 @@ public enum HollowHouseWorkBlockType {
      */
     public String getDisplayName() {
         return displayName;
+    }
+
+    /**
+     * 获取是否需要供电站发电状态
+     * "yes" 表示需要供电，"no" 表示不需要
+     */
+    public String getRequiresPower() {
+        return requiresPower;
+    }
+
+    /**
+     * 判断是否需要供电站发电状态
+     */
+    public boolean isRequiresPower() {
+        return "yes".equalsIgnoreCase(requiresPower);
     }
 
     /**

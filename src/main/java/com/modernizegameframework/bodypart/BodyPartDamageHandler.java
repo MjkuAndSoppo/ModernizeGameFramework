@@ -10,6 +10,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -291,7 +292,8 @@ public class BodyPartDamageHandler {
             // 爆炸伤害四倍
             applyExplosionDamage(victim, source, amount * 4.0f);
         } else if (isFallDamage(source)) {
-            applyFallDamage(victim, amount);
+            // 肢体系统开启时摔落伤害提升为 8 倍
+            applyFallDamage(victim, amount * 8.0f);
         } else if (isEnvironmentalDamage(source)) {
             applyEnvironmentalDamage(victim, amount);
         } else {
@@ -395,40 +397,63 @@ public class BodyPartDamageHandler {
 
     /**
      * 处理摔落伤害
-     * 优先均摊给未黑的腿；双腿都黑时均摊给所有未黑部位
+     * 伤害已由调用方乘以 8 倍，先用双腿当前血量吸收；
+     * 平均分配后仍有剩余的部分作为溢出伤害，均摊给全身所有部位。
      *
      * @param victim 受害者
-     * @param amount 伤害量
+     * @param amount 伤害量（已乘 8）
      */
     private static void applyFallDamage(Player victim, float amount) {
         BodyPartHelper.getBodyPartCapability(victim).ifPresent(cap -> {
-            List<BodyPartType> targets = new ArrayList<>();
-            if (!cap.isDestroyed(BodyPartType.LEFT_LEG)) {
-                targets.add(BodyPartType.LEFT_LEG);
-            }
-            if (!cap.isDestroyed(BodyPartType.RIGHT_LEG)) {
-                targets.add(BodyPartType.RIGHT_LEG);
+            float leftHealth = cap.getHealth(BodyPartType.LEFT_LEG);
+            float rightHealth = cap.getHealth(BodyPartType.RIGHT_LEG);
+
+            // 先用双腿血量吸收摔落伤害，尽量平均分配
+            float leftDamage = Math.min(leftHealth, amount / 2.0f);
+            float rightDamage = Math.min(rightHealth, amount / 2.0f);
+            float remaining = amount - leftDamage - rightDamage;
+
+            // 若一条腿先满，让还有余量的腿继续承担剩余伤害
+            if (remaining > 0.0f) {
+                float leftCapacity = leftHealth - leftDamage;
+                if (leftCapacity > 0.0f) {
+                    float extra = Math.min(remaining, leftCapacity);
+                    leftDamage += extra;
+                    remaining -= extra;
+                }
+                float rightCapacity = rightHealth - rightDamage;
+                if (remaining > 0.0f && rightCapacity > 0.0f) {
+                    float extra = Math.min(remaining, rightCapacity);
+                    rightDamage += extra;
+                    remaining -= extra;
+                }
             }
 
-            // 双腿都黑时，分摊给全身未黑部位
-            if (targets.isEmpty()) {
+            List<BodyPartType> affectedParts = new ArrayList<>();
+            if (leftDamage > 0.0f) {
+                BodyPartHelper.applyDamage(victim, BodyPartType.LEFT_LEG, leftDamage);
+                affectedParts.add(BodyPartType.LEFT_LEG);
+            }
+            if (rightDamage > 0.0f) {
+                BodyPartHelper.applyDamage(victim, BodyPartType.RIGHT_LEG, rightDamage);
+                affectedParts.add(BodyPartType.RIGHT_LEG);
+            }
+
+            // 超出双腿总血量的溢出伤害扩散到全身
+            if (remaining > 0.0f) {
+                float perPart = remaining / BodyPartType.values().length;
                 for (BodyPartType type : BodyPartType.values()) {
-                    if (!cap.isDestroyed(type)) {
-                        targets.add(type);
+                    BodyPartHelper.applyDamage(victim, type, perPart);
+                    if (!affectedParts.contains(type)) {
+                        affectedParts.add(type);
                     }
                 }
             }
 
-            if (targets.isEmpty()) {
-                BodyPartHelper.applyDamage(victim, BodyPartType.BODY, amount);
+            if (affectedParts.isEmpty()) {
                 applySecondaryEffects(victim, BodyPartType.BODY);
             } else {
-                float perPart = amount / targets.size();
-                for (BodyPartType type : targets) {
-                    BodyPartHelper.applyDamage(victim, type, perPart);
-                }
-                BodyPartType primary = pickLowestHealthRatioPart(cap, targets);
-                applySecondaryEffects(victim, primary);
+                applySecondaryEffects(victim, pickLowestHealthRatioPart(cap, affectedParts));
             }
         });
         checkFatal(victim);

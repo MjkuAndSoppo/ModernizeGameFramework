@@ -52,5 +52,11 @@
   "item.modernizegameframework.hollow_house_portal": "Hollow House Portal",
   "item.modernizegameframework.control_box": "Control Box",
   "item.modernizegameframework.storehouse": "Storehouse",
-  "item.modernizegameframework.medical_station": "Medical Station"
+  "item.modernizegameframework.medical_station": "Medical Station",
+  "block.modernizegameframework.power_station": "Power Station",
+  "item.modernizegameframework.power_station": "Power Station",
+  "item.modernizegameframework.fuel_canister": "Fuel Canister",
+  "item.modernizegameframework.fuel_barrel": "Fuel Barrel",
+  "block.modernizegameframework.lighting": "Lighting",
+  "item.modernizegameframework.lighting": "Lighting"
 }

@@ -3,6 +3,7 @@ package com.modernizegameframework.hollowhouse;
 import com.modernizegameframework.ModernizeGameFramework;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -34,6 +35,7 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -308,11 +310,66 @@ public class HollowHouseDimensionManager {
     }
 
     /**
+     * 运行时数据缓存，按玩家 UUID 索引
+     * <p>
+     * 死亡/跨维度克隆会产生新的玩家实体，但 UUID 不变，
+     * 通过缓存可保证同一次游戏会话中始终访问到同一份数据对象。
+     */
+    private static final Map<UUID, HollowHouseDataImpl> HOLLOW_HOUSE_DATA_CACHE = new HashMap<>();
+
+    /**
      * 获取玩家的藏身处数据
+     * <p>
+     * 优先从世界存档 {@link HollowHouseSavedData} 加载并缓存，
+     * 不再依赖玩家实体的 Capability，避免死亡后数据丢失。
      */
     @Nullable
     public static HollowHouseData getData(ServerPlayer player) {
-        return player.getCapability(HollowHouseDataRegistry.HOLLOW_HOUSE_DATA_CAPABILITY).orElse(null);
+        MinecraftServer server = player.getServer();
+        if (server == null) {
+            return null;
+        }
+        UUID playerId = player.getUUID();
+        HollowHouseDataImpl cached = HOLLOW_HOUSE_DATA_CACHE.get(playerId);
+        if (cached != null) {
+            return cached;
+        }
+        HollowHouseSavedData savedData = HollowHouseSavedData.get(server);
+        CompoundTag tag = savedData.getData(playerId);
+        HollowHouseDataImpl data = new HollowHouseDataImpl();
+        if (!tag.isEmpty()) {
+            data.deserializeNBT(tag);
+        }
+        HOLLOW_HOUSE_DATA_CACHE.put(playerId, data);
+        return data;
+    }
+
+    /**
+     * 将指定玩家的缓存数据同步回世界存档并标记脏数据
+     */
+    public static void syncDataToSavedData(ServerPlayer player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) {
+            return;
+        }
+        UUID playerId = player.getUUID();
+        HollowHouseDataImpl cached = HOLLOW_HOUSE_DATA_CACHE.get(playerId);
+        if (cached == null) {
+            return;
+        }
+        HollowHouseSavedData savedData = HollowHouseSavedData.get(server);
+        CompoundTag oldTag = savedData.getData(playerId);
+        CompoundTag newTag = cached.serializeNBT();
+        if (!newTag.equals(oldTag)) {
+            savedData.setData(playerId, newTag);
+        }
+    }
+
+    /**
+     * 玩家登出时清理运行时缓存
+     */
+    public static void clearDataCache(UUID playerId) {
+        HOLLOW_HOUSE_DATA_CACHE.remove(playerId);
     }
 
     /**

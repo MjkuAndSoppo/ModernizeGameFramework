@@ -6,7 +6,9 @@ import com.modernizegameframework.bodypart.BodyPartNetwork;
 import com.modernizegameframework.hollowhouse.HollowHouseConfig;
 import com.modernizegameframework.hollowhouse.HollowHouseRegistry;
 import com.modernizegameframework.hollowhouse.HollowHouseWorkBlockNetwork;
+import com.modernizegameframework.hollowhouse.LightingNetwork;
 import com.modernizegameframework.hollowhouse.MedicalStationNetwork;
+import com.modernizegameframework.hollowhouse.PowerStationNetwork;
 import com.modernizegameframework.medical.MedicalItems;
 import com.modernizegameframework.movement.MovementConfig;
 import com.modernizegameframework.movement.MovementNetwork;
@@ -134,6 +136,12 @@ public class ModernizeGameFramework
 
         // Register medical station network messages
         MedicalStationNetwork.register();
+
+        // Register power station network messages
+        PowerStationNetwork.register();
+
+        // Register lighting network messages
+        LightingNetwork.register();
 
         // Register secure container items and menu types
         SecureContainerRegistry.ITEMS.register(modEventBus);

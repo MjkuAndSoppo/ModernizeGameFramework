@@ -1,0 +1,4 @@
+{"session":"death-clears-levels","runId":"post-fix","event":"player-clone","timestamp":1785975223449,"payload":{"currentUuid":"380df991-f603-344c-a090-369bad2a924a","originalUuid":"380df991-f603-344c-a090-369bad2a924a","isWasDeath":true}}
+{"session":"death-clears-levels","runId":"post-fix","event":"player-respawn","timestamp":1785975223464,"payload":{"inside":"false","uuid":"380df991-f603-344c-a090-369bad2a924a","levels":"{}"}}
+{"session":"death-clears-levels","runId":"post-fix","event":"player-clone","timestamp":1785975258893,"payload":{"currentUuid":"380df991-f603-344c-a090-369bad2a924a","originalUuid":"380df991-f603-344c-a090-369bad2a924a","isWasDeath":true}}
+{"session":"death-clears-levels","runId":"post-fix","event":"player-respawn","timestamp":1785975258902,"payload":{"inside":"false","uuid":"380df991-f603-344c-a090-369bad2a924a","levels":"{medical=2, lighting=1, storehouse=4}"}}

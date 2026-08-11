@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 
@@ -48,6 +49,22 @@ public class HollowHouseDataImpl implements HollowHouseData {
      * 医疗站生产任务列表
      */
     private final List<MedicalTask> medicalTasks = new ArrayList<>();
+
+    /**
+     * 供电站数据
+     */
+    private final PowerStationData powerStationData = new PowerStationData();
+
+    @Nullable
+    private BlockPos powerStationPos = null;
+
+    /**
+     * 照明工作方块数据
+     */
+    private final LightingData lightingData = new LightingData();
+
+    @Nullable
+    private BlockPos lightingPos = null;
 
     @Override
     public int getChunkX() {
@@ -248,6 +265,22 @@ public class HollowHouseDataImpl implements HollowHouseData {
         medicalTasksTag.put("Tasks", taskList);
         tag.put("medicalTasks", medicalTasksTag);
 
+        tag.put("powerStationData", powerStationData.serializeNBT());
+
+        if (powerStationPos != null) {
+            tag.putInt("powerStationX", powerStationPos.getX());
+            tag.putInt("powerStationY", powerStationPos.getY());
+            tag.putInt("powerStationZ", powerStationPos.getZ());
+        }
+
+        tag.put("lightingData", lightingData.serializeNBT());
+
+        if (lightingPos != null) {
+            tag.putInt("lightingX", lightingPos.getX());
+            tag.putInt("lightingY", lightingPos.getY());
+            tag.putInt("lightingZ", lightingPos.getZ());
+        }
+
         return tag;
     }
 
@@ -314,6 +347,32 @@ public class HollowHouseDataImpl implements HollowHouseData {
                 }
             }
         }
+
+        if (tag.contains("powerStationData", Tag.TAG_COMPOUND)) {
+            powerStationData.deserializeNBT(tag.getCompound("powerStationData"));
+        }
+
+        if (tag.contains("powerStationX")) {
+            powerStationPos = new BlockPos(
+                    tag.getInt("powerStationX"),
+                    tag.getInt("powerStationY"),
+                    tag.getInt("powerStationZ"));
+        } else {
+            powerStationPos = null;
+        }
+
+        if (tag.contains("lightingData", Tag.TAG_COMPOUND)) {
+            lightingData.deserializeNBT(tag.getCompound("lightingData"));
+        }
+
+        if (tag.contains("lightingX")) {
+            lightingPos = new BlockPos(
+                    tag.getInt("lightingX"),
+                    tag.getInt("lightingY"),
+                    tag.getInt("lightingZ"));
+        } else {
+            lightingPos = null;
+        }
     }
 
     @Override
@@ -370,5 +429,78 @@ public class HollowHouseDataImpl implements HollowHouseData {
         if (tasks != null) {
             medicalTasks.addAll(tasks);
         }
+    }
+
+    @Override
+    public void tickMedicalTasks(ServerPlayer player) {
+        java.util.Iterator<MedicalTask> iterator = medicalTasks.iterator();
+        boolean changed = false;
+        while (iterator.hasNext()) {
+            MedicalTask task = iterator.next();
+            ItemStack output = task.tick();
+            if (!output.isEmpty()) {
+                HollowHouseStorehouseHelper.addItem(this, output);
+                changed = true;
+            }
+            if (task.isFinished()) {
+                iterator.remove();
+                changed = true;
+            }
+        }
+        if (changed) {
+            MedicalStationNetwork.syncTasks(player);
+        }
+    }
+
+    @Override
+    public void removeMedicalTask(int index) {
+        if (index >= 0 && index < medicalTasks.size()) {
+            medicalTasks.remove(index);
+        }
+    }
+
+    @Override
+    public PowerStationData getPowerStationData() {
+        return powerStationData;
+    }
+
+    @Override
+    public void setPowerStationData(PowerStationData data) {
+        if (data != null) {
+            powerStationData.deserializeNBT(data.serializeNBT());
+        }
+    }
+
+    @Override
+    public BlockPos getPowerStationPos() {
+        return powerStationPos;
+    }
+
+    @Override
+    public void setPowerStationPos(@Nullable BlockPos pos) {
+        this.powerStationPos = pos;
+    }
+
+    @Override
+    public LightingData getLightingData() {
+        return lightingData;
+    }
+
+    @Override
+    public void setLightingData(LightingData data) {
+        if (data != null) {
+            lightingData.deserializeNBT(data.serializeNBT());
+        }
+    }
+
+    @Override
+    @Nullable
+    public BlockPos getLightingPos() {
+        return lightingPos;
+    }
+
+    @Override
+    public void setLightingPos(@Nullable BlockPos pos) {
+        this.lightingPos = pos;
     }
 }

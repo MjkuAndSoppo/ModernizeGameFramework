@@ -2,6 +2,7 @@ package com.modernizegameframework.hollowhouse;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
 import net.minecraftforge.common.util.INBTSerializable;
 
@@ -203,4 +204,60 @@ public interface HollowHouseData extends INBTSerializable<CompoundTag> {
      * 设置医疗站生产任务列表（用于反序列化）
      */
     void setMedicalTasks(List<MedicalTask> tasks);
+
+    /**
+     * 推进医疗站生产任务进度，并返回是否有产出或任务完成
+     *
+     * @param player 用于同步任务列表的玩家
+     */
+    void tickMedicalTasks(ServerPlayer player);
+
+    /**
+     * 移除指定索引的医疗站任务
+     *
+     * @param index 任务索引
+     */
+    void removeMedicalTask(int index);
+
+    /**
+     * 获取供电站数据
+     */
+    PowerStationData getPowerStationData();
+
+    /**
+     * 设置供电站数据（用于反序列化）
+     */
+    void setPowerStationData(PowerStationData data);
+
+    /**
+     * 获取供电站方块位置
+     */
+    @Nullable
+    BlockPos getPowerStationPos();
+
+    /**
+     * 设置供电站方块位置
+     */
+    void setPowerStationPos(@Nullable BlockPos pos);
+
+    /**
+     * 获取照明工作方块数据
+     */
+    LightingData getLightingData();
+
+    /**
+     * 设置照明工作方块数据
+     */
+    void setLightingData(LightingData data);
+
+    /**
+     * 获取照明方块位置
+     */
+    @Nullable
+    BlockPos getLightingPos();
+
+    /**
+     * 设置照明方块位置
+     */
+    void setLightingPos(@Nullable BlockPos pos);
 }

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "modernizegameframework:block/power_station"
+    },
+    "lit=true": {
+      "model": "modernizegameframework:block/power_station"
+    }
+  }
+}

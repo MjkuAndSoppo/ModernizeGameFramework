@@ -81,6 +81,10 @@ public class TarkovInventoryRegistry {
                         output.accept(HollowHouseRegistry.CONTROL_BOX_ITEM.get());
                         output.accept(HollowHouseRegistry.STOREHOUSE_ITEM.get());
                         output.accept(HollowHouseRegistry.MEDICAL_STATION_ITEM.get());
+                        output.accept(HollowHouseRegistry.POWER_STATION_ITEM.get());
+                        output.accept(HollowHouseRegistry.FUEL_CANISTER.get());
+                        output.accept(HollowHouseRegistry.FUEL_BARREL.get());
+                        output.accept(HollowHouseRegistry.LIGHTING_ITEM.get());
                     })
                     .build());
 

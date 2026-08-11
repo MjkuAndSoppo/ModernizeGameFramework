@@ -249,6 +249,8 @@ public class HollowHouseWorkBlockScreen extends Screen {
         return switch (type) {
             case STOREHOUSE -> "藏身处仓库，可存储物品供其他工作方块消耗。";
             case MEDICAL -> "藏身处医疗站，可消耗仓库物品生产医疗物品。";
+            case POWER -> "藏身处供电站，消耗燃料为需要电力工作方块供电。";
+            case LIGHTING -> "藏身处照明，消耗电力点亮整个私人区域。";
         };
     }
 

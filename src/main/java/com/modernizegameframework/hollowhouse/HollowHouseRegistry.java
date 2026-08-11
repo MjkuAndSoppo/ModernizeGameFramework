@@ -74,5 +74,38 @@ public class HollowHouseRegistry {
     public static final RegistryObject<Item> MEDICAL_STATION_ITEM = ITEMS.register("medical_station",
             () -> new BlockItem(MEDICAL_STATION.get(), new Item.Properties()));
 
+    // 供电站方块
+    public static final RegistryObject<Block> POWER_STATION = BLOCKS.register("power_station",
+            () -> new PowerStationBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_YELLOW)
+                    .strength(1.5F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()
+                    .lightLevel(state -> state.getValue(PowerStationBlock.LIT) ? 13 : 0)));
+
+    // 供电站物品
+    public static final RegistryObject<Item> POWER_STATION_ITEM = ITEMS.register("power_station",
+            () -> new BlockItem(POWER_STATION.get(), new Item.Properties()));
+
+    // 燃油罐（耐久 144）
+    public static final RegistryObject<Item> FUEL_CANISTER = ITEMS.register("fuel_canister",
+            () -> new FuelItem(new Item.Properties().stacksTo(1), 144));
+
+    // 燃油桶（耐久 648）
+    public static final RegistryObject<Item> FUEL_BARREL = ITEMS.register("fuel_barrel",
+            () -> new FuelItem(new Item.Properties().stacksTo(1), 648));
+
+    // 照明工作方块
+    public static final RegistryObject<Block> LIGHTING = BLOCKS.register("lighting",
+            () -> new LightingBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_BLUE)
+                    .strength(1.5F, 6.0F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()));
+
+    // 照明工作方块物品
+    public static final RegistryObject<Item> LIGHTING_ITEM = ITEMS.register("lighting",
+            () -> new BlockItem(LIGHTING.get(), new Item.Properties()));
+
     private HollowHouseRegistry() {}
 }

@@ -3,7 +3,6 @@ package com.modernizegameframework.hollowhouse;
 import com.modernizegameframework.ui.UIBlurBackground;
 import com.modernizegameframework.ui.UIPanel;
 import com.modernizegameframework.ui.UIScrollPanel;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -12,12 +11,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * 医疗站界面
- * 左侧为配方列表，中间为配方详情与制作控制，右侧为当前生产任务列表
+ * 左侧为配方列表，中间为配方详情/任务详情与操作，右侧为当前生产任务列表
  */
 public class MedicalStationScreen extends Screen {
 
@@ -46,6 +44,8 @@ public class MedicalStationScreen extends Screen {
     private final List<MedicalRecipe> availableRecipes;
 
     private MedicalRecipe selectedRecipe;
+    private MedicalTask selectedTask;
+    private int selectedTaskIndex = -1;
 
     private UIScrollPanel recipePanel;
     private UIPanel detailPanel;
@@ -55,6 +55,7 @@ public class MedicalStationScreen extends Screen {
     private Button craftButton;
     private Button increaseButton;
     private Button decreaseButton;
+    private Button cancelTaskButton;
 
     private final List<RecipeListEntry> recipeEntries = new ArrayList<>();
     private final List<TaskListEntry> taskEntries = new ArrayList<>();
@@ -72,6 +73,8 @@ public class MedicalStationScreen extends Screen {
         }
 
         this.selectedRecipe = availableRecipes.isEmpty() ? null : availableRecipes.get(0);
+        this.selectedTask = null;
+        this.selectedTaskIndex = -1;
     }
 
     @Override
@@ -97,7 +100,7 @@ public class MedicalStationScreen extends Screen {
         taskPanel.setBorderColor(0xFF555555);
         buildTaskList();
 
-        // 数量编辑框与按钮
+        // 数量编辑框与按钮（仅在选择配方时显示）
         int centerX = detailPanel.getX() + MAIN_PANEL_WIDTH / 2;
         int editBoxWidth = 40;
         int editBoxX = centerX - editBoxWidth / 2;
@@ -125,7 +128,13 @@ public class MedicalStationScreen extends Screen {
                 .build();
         this.addRenderableWidget(craftButton);
 
-        updateCraftButton();
+        // 取消任务按钮（仅在选择任务时显示）
+        cancelTaskButton = Button.builder(Component.literal("取消任务"), btn -> cancelSelectedTask())
+                .bounds(centerX - 35, editBoxY + 22, 70, 20)
+                .build();
+        this.addRenderableWidget(cancelTaskButton);
+
+        updateWidgetVisibility();
     }
 
     /**
@@ -144,7 +153,7 @@ public class MedicalStationScreen extends Screen {
             RecipeListEntry entry = new RecipeListEntry(
                     recipePanel.getX(), recipePanel.getY() + i * RECIPE_ENTRY_HEIGHT,
                     entryWidth, RECIPE_ENTRY_HEIGHT, recipe);
-            entry.setSelected(recipe == selectedRecipe);
+            entry.setSelected(recipe == selectedRecipe && selectedTask == null);
             entry.setOnClick(r -> selectRecipe(r));
             recipePanel.addChild(entry);
             recipeEntries.add(entry);
@@ -166,7 +175,9 @@ public class MedicalStationScreen extends Screen {
             MedicalTask task = tasks.get(i);
             TaskListEntry entry = new TaskListEntry(
                     taskPanel.getX(), taskPanel.getY() + i * TASK_ENTRY_HEIGHT,
-                    entryWidth, TASK_ENTRY_HEIGHT, task);
+                    entryWidth, TASK_ENTRY_HEIGHT, task, i);
+            entry.setSelected(selectedTaskIndex == i);
+            entry.setOnClick((t, index) -> selectTask(t, index));
             taskPanel.addChild(entry);
             taskEntries.add(entry);
         }
@@ -177,10 +188,48 @@ public class MedicalStationScreen extends Screen {
      */
     private void selectRecipe(MedicalRecipe recipe) {
         this.selectedRecipe = recipe;
+        this.selectedTask = null;
+        this.selectedTaskIndex = -1;
         for (RecipeListEntry entry : recipeEntries) {
             entry.setSelected(entry.getRecipe() == recipe);
         }
-        updateCraftButton();
+        for (TaskListEntry entry : taskEntries) {
+            entry.setSelected(false);
+        }
+        updateWidgetVisibility();
+    }
+
+    /**
+     * 选中右侧任务
+     */
+    private void selectTask(MedicalTask task, int index) {
+        this.selectedTask = task;
+        this.selectedTaskIndex = index;
+        for (RecipeListEntry entry : recipeEntries) {
+            entry.setSelected(false);
+        }
+        for (TaskListEntry entry : taskEntries) {
+            entry.setSelected(entry.getIndex() == index);
+        }
+        updateWidgetVisibility();
+    }
+
+    /**
+     * 更新控件可见性
+     * 选中配方时显示制作控件，选中任务时显示取消按钮
+     */
+    private void updateWidgetVisibility() {
+        boolean isRecipeMode = selectedTask == null;
+        amountEditBox.visible = isRecipeMode;
+        amountEditBox.active = isRecipeMode;
+        decreaseButton.visible = isRecipeMode;
+        decreaseButton.active = isRecipeMode;
+        increaseButton.visible = isRecipeMode;
+        increaseButton.active = isRecipeMode;
+        craftButton.visible = isRecipeMode;
+        craftButton.active = isRecipeMode && selectedRecipe != null;
+        cancelTaskButton.visible = !isRecipeMode;
+        cancelTaskButton.active = !isRecipeMode;
     }
 
     /**
@@ -215,12 +264,14 @@ public class MedicalStationScreen extends Screen {
     }
 
     /**
-     * 更新制作按钮状态
+     * 取消选中的任务
      */
-    private void updateCraftButton() {
-        if (craftButton != null) {
-            craftButton.active = selectedRecipe != null;
+    private void cancelSelectedTask() {
+        if (selectedTask == null || selectedTaskIndex < 0) {
+            return;
         }
+        MedicalStationNetwork.CHANNEL.sendToServer(
+                new MedicalStationNetwork.CancelMedicalTaskPacket(selectedTaskIndex));
     }
 
     /**
@@ -229,7 +280,23 @@ public class MedicalStationScreen extends Screen {
     public void updateTasks(List<MedicalTask> newTasks) {
         this.tasks.clear();
         this.tasks.addAll(newTasks);
+
+        // 如果之前选中的任务在新列表中已不存在（例如被取消），强制切回配方模式
+        if (selectedTaskIndex >= 0 && selectedTaskIndex < tasks.size()) {
+            this.selectedTask = tasks.get(selectedTaskIndex);
+        } else {
+            this.selectedTask = null;
+            this.selectedTaskIndex = -1;
+            // 确保回到配方选择模式，默认选中第一个可用配方
+            if (!availableRecipes.isEmpty()) {
+                selectedRecipe = availableRecipes.get(0);
+            }
+        }
+
+        // 重新构建任务列表与配方列表，确保右侧栏目正确清算
         buildTaskList();
+        buildRecipeList();
+        updateWidgetVisibility();
     }
 
     @Override
@@ -238,7 +305,7 @@ public class MedicalStationScreen extends Screen {
         if (amountEditBox != null) {
             amountEditBox.tick();
         }
-        // 本地倒计时刷新显示
+        // 本地倒计时刷新显示（getRemainingSeconds 会基于开始时间实时校准）
         for (TaskListEntry entry : taskEntries) {
             entry.updateDisplay();
         }
@@ -271,10 +338,23 @@ public class MedicalStationScreen extends Screen {
      * 渲染中间详情面板
      */
     private void renderDetailPanel(GuiGraphics graphics) {
-        if (selectedRecipe == null) {
+        // 右侧面板标题统一在面板上方绘制，避免遮挡滚动内容
+        graphics.drawString(this.font, Component.literal("生产队列"),
+                taskPanel.getX() + 4, taskPanel.getY() - 12, 0xFFFFFFFF, false);
+
+        if (selectedTask != null) {
+            renderTaskDetail(graphics);
             return;
         }
+        if (selectedRecipe != null) {
+            renderRecipeDetail(graphics);
+        }
+    }
 
+    /**
+     * 渲染配方详情
+     */
+    private void renderRecipeDetail(GuiGraphics graphics) {
         int x = detailPanel.getX() + 8;
         int y = detailPanel.getY() + 8;
         int lineHeight = 12;
@@ -310,10 +390,47 @@ public class MedicalStationScreen extends Screen {
         graphics.drawString(this.font, Component.literal("制作数量"),
                 detailPanel.getX() + MAIN_PANEL_WIDTH / 2 - this.font.width("制作数量") / 2,
                 editBoxY - 12, 0xFFFFFFFF, false);
+    }
 
-        // 右侧面板标题
-        graphics.drawString(this.font, Component.literal("生产队列"),
-                taskPanel.getX() + 4, taskPanel.getY() + 4, 0xFFFFFFFF, false);
+    /**
+     * 渲染任务详情
+     */
+    private void renderTaskDetail(GuiGraphics graphics) {
+        int x = detailPanel.getX() + 8;
+        int y = detailPanel.getY() + 8;
+        int lineHeight = 12;
+
+        // 任务标题
+        graphics.drawString(this.font, Component.literal("§n任务详情"), x, y, 0xFFFFFFFF, false);
+        y += lineHeight + 4;
+
+        // 产出物品
+        ItemStack output = selectedTask.getRecipe().getOutput();
+        graphics.renderItem(output, x, y);
+        graphics.renderItemDecorations(this.font, output, x, y);
+        graphics.drawString(this.font, output.getHoverName(), x + 18, y + 4, 0xFFFFFFFF, false);
+        y += 22;
+
+        graphics.drawString(this.font, Component.literal("§7总量：§f" + selectedTask.getAmount()), x, y, 0xFFFFFFFF, false);
+        y += lineHeight;
+        graphics.drawString(this.font, Component.literal("§7已完成：§f" + selectedTask.getCompletedAmount()), x, y, 0xFFFFFFFF, false);
+        y += lineHeight;
+        graphics.drawString(this.font, Component.literal("§7剩余时间：§e" + selectedTask.getFormattedRemainingTime()), x, y, 0xFFFFFFFF, false);
+        y += lineHeight + 2;
+
+        // 剩余材料
+        graphics.drawString(this.font, Component.literal("§7消耗材料："), x, y, 0xFFFFFFFF, false);
+        y += lineHeight;
+        for (ItemStack ingredient : selectedTask.getRemainingIngredients()) {
+            String text = "  " + ingredient.getHoverName().getString() + " * " + ingredient.getCount();
+            graphics.drawString(this.font, Component.literal(text), x, y, 0xFFFFFFFF, false);
+            y += lineHeight;
+        }
+
+        // 经验
+        y += 2;
+        graphics.drawString(this.font, Component.literal("§7已消耗经验：§e" + selectedTask.getTotalExperienceCost()
+                + " §7（剩余返还：§e" + selectedTask.getRemainingExperienceCost() + "§7）"), x, y, 0xFFFFFFFF, false);
     }
 
     @Override
@@ -389,7 +506,6 @@ public class MedicalStationScreen extends Screen {
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             super.render(graphics, mouseX, mouseY, partialTick);
-            // 绘制配方名称
             String name = recipe.getDisplayName();
             if (font.width(name) > width - 4) {
                 name = font.plainSubstrByWidth(name, width - 8) + "...";
@@ -413,12 +529,29 @@ public class MedicalStationScreen extends Screen {
     private class TaskListEntry extends UIPanel {
 
         private final MedicalTask task;
+        private final int index;
+        private boolean selected;
+        private java.util.function.BiConsumer<MedicalTask, Integer> onClick;
 
-        public TaskListEntry(int x, int y, int width, int height, MedicalTask task) {
+        public TaskListEntry(int x, int y, int width, int height, MedicalTask task, int index) {
             super(x, y, width, height);
             this.task = task;
+            this.index = index;
             setBackgroundColor(0xFF333333);
             setBorderColor(0xFF555555);
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public void setSelected(boolean selected) {
+            this.selected = selected;
+            setBackgroundColor(selected ? 0xFF3A5A8A : 0xFF333333);
+        }
+
+        public void setOnClick(java.util.function.BiConsumer<MedicalTask, Integer> onClick) {
+            this.onClick = onClick;
         }
 
         public void updateDisplay() {
@@ -433,6 +566,15 @@ public class MedicalStationScreen extends Screen {
                 text = font.plainSubstrByWidth(text, width - 8) + "...";
             }
             graphics.drawString(font, Component.literal(text), x + 2, y + (height - 8) / 2, 0xFFFFFFFF, false);
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            if (isMouseOver(mouseX, mouseY) && onClick != null) {
+                onClick.accept(task, index);
+                return true;
+            }
+            return false;
         }
     }
 }

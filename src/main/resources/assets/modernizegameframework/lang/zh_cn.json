@@ -52,5 +52,11 @@
   "item.modernizegameframework.hollow_house_portal": "藏身处入口",
   "item.modernizegameframework.control_box": "控制箱",
   "item.modernizegameframework.storehouse": "仓库",
-  "item.modernizegameframework.medical_station": "医疗站"
+  "item.modernizegameframework.medical_station": "医疗站",
+  "block.modernizegameframework.power_station": "供电站",
+  "item.modernizegameframework.power_station": "供电站",
+  "item.modernizegameframework.fuel_canister": "燃油罐",
+  "item.modernizegameframework.fuel_barrel": "燃油桶",
+  "block.modernizegameframework.lighting": "照明",
+  "item.modernizegameframework.lighting": "照明"
 }

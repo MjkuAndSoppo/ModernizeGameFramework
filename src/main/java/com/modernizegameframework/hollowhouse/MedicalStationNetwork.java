@@ -55,6 +55,9 @@ public class MedicalStationNetwork {
         CHANNEL.registerMessage(packetId++, StartMedicalProductionPacket.class,
                 StartMedicalProductionPacket::encode, StartMedicalProductionPacket::decode,
                 StartMedicalProductionPacket::handle);
+        CHANNEL.registerMessage(packetId++, CancelMedicalTaskPacket.class,
+                CancelMedicalTaskPacket::encode, CancelMedicalTaskPacket::decode,
+                CancelMedicalTaskPacket::handle);
     }
 
     /**
@@ -81,19 +84,23 @@ public class MedicalStationNetwork {
 
     /**
      * 编码任务列表到缓冲区
+     * 客户端与服务端系统时间可能不一致，因此直接发送剩余秒数与暂停状态，
+     * 避免客户端基于时间戳计算时出现漂移或断电后仍读秒的问题。
      */
     private static void writeTasks(FriendlyByteBuf buffer, List<MedicalTask> tasks) {
         buffer.writeInt(tasks.size());
         for (MedicalTask task : tasks) {
             buffer.writeUtf(task.getRecipe().name());
             buffer.writeInt(task.getAmount());
-            buffer.writeInt(task.getRemainingSeconds());
             buffer.writeInt(task.getCompletedAmount());
+            buffer.writeInt(task.getRemainingSeconds());
+            buffer.writeBoolean(task.isPaused());
         }
     }
 
     /**
      * 从缓冲区解码任务列表
+     * 根据剩余秒数与暂停状态反推出本地时间戳，使客户端显示与服务端保持一致。
      */
     private static List<MedicalTask> readTasks(FriendlyByteBuf buffer) {
         List<MedicalTask> tasks = new ArrayList<>();
@@ -101,10 +108,17 @@ public class MedicalStationNetwork {
         for (int i = 0; i < size; i++) {
             MedicalRecipe recipe = MedicalRecipe.fromName(buffer.readUtf());
             int amount = buffer.readInt();
-            int remainingSeconds = buffer.readInt();
             int completedAmount = buffer.readInt();
+            int remainingSeconds = buffer.readInt();
+            boolean paused = buffer.readBoolean();
             if (recipe != null) {
-                tasks.add(new MedicalTask(recipe, amount, remainingSeconds, completedAmount));
+                long now = System.currentTimeMillis();
+                int totalSeconds = recipe.getProductionSeconds() * amount;
+                int elapsedSeconds = Math.max(0, totalSeconds - remainingSeconds);
+                long startTime = now - (long) elapsedSeconds * 1000L;
+                long pauseStartTime = paused ? now : 0L;
+                MedicalTask task = new MedicalTask(recipe, amount, startTime, completedAmount, 0L, pauseStartTime);
+                tasks.add(task);
             }
         }
         return tasks;
@@ -240,6 +254,12 @@ public class MedicalStationNetwork {
             return;
         }
 
+        // 检查供电状态：需要电力的工作方块只能在供电站发电时开始任务
+        if (HollowHouseWorkBlockType.MEDICAL.isRequiresPower() && !data.getPowerStationData().isGenerating()) {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§c供电站未发电，无法开始制作"), true);
+            return;
+        }
+
         // 检查经验点数（使用经验等级作为经验点）
         int totalExperienceCost = recipe.getExperienceCost() * amount;
         if (player.totalExperience < totalExperienceCost) {
@@ -273,6 +293,98 @@ public class MedicalStationNetwork {
 
         player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                 "§a开始制作 §e" + recipe.getDisplayName() + "*" + amount), true);
+
+        // 同步任务列表
+        syncTasks(player);
+    }
+
+    /**
+     * 取消医疗站任务请求数据包
+     */
+    public static class CancelMedicalTaskPacket {
+
+        private final int taskIndex;
+
+        public CancelMedicalTaskPacket(int taskIndex) {
+            this.taskIndex = taskIndex;
+        }
+
+        public static void encode(CancelMedicalTaskPacket packet, FriendlyByteBuf buffer) {
+            buffer.writeInt(packet.taskIndex);
+        }
+
+        public static CancelMedicalTaskPacket decode(FriendlyByteBuf buffer) {
+            return new CancelMedicalTaskPacket(buffer.readInt());
+        }
+
+        public static void handle(CancelMedicalTaskPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                ServerPlayer player = context.getSender();
+                if (player == null) {
+                    return;
+                }
+                cancelTask(player, packet.taskIndex);
+            });
+            context.setPacketHandled(true);
+        }
+    }
+
+    /**
+     * 服务端处理取消任务请求
+     */
+    private static void cancelTask(ServerPlayer player, int taskIndex) {
+        if (!HollowHouseConfig.ENABLED.get()) {
+            return;
+        }
+        if (player.level().dimension() != HollowHouseDimensionManager.HOLLOW_HOUSE_DIMENSION) {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§c只能在藏身处内操作医疗站"), true);
+            return;
+        }
+
+        HollowHouseData data = HollowHouseDimensionManager.getData(player);
+        if (data == null) {
+            return;
+        }
+
+        List<MedicalTask> tasks = data.getMedicalTasks();
+        if (taskIndex < 0 || taskIndex >= tasks.size()) {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§c任务不存在"), true);
+            return;
+        }
+
+        MedicalTask task = tasks.get(taskIndex);
+
+        // 先校准一次任务进度，确保已完成产出已发放
+        ItemStack output = task.tick();
+        if (!output.isEmpty()) {
+            HollowHouseStorehouseHelper.addItem(data, output);
+        }
+
+        // 返还剩余材料到仓库
+        for (ItemStack ingredient : task.getRemainingIngredients()) {
+            int remaining = HollowHouseStorehouseHelper.addItem(data, ingredient);
+            if (remaining > 0) {
+                ItemStack drop = ingredient.copy();
+                drop.setCount(remaining);
+                // 仓库放不下则尝试给予玩家
+                if (!player.addItem(drop)) {
+                    player.drop(drop, false);
+                }
+            }
+        }
+
+        // 返还剩余经验
+        int remainingExp = task.getRemainingExperienceCost();
+        if (remainingExp > 0) {
+            player.giveExperiencePoints(remainingExp);
+        }
+
+        // 移除任务（必须调用 data 的方法，getMedicalTasks 返回的是副本）
+        data.removeMedicalTask(taskIndex);
+
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                "§a已取消制作 §e" + task.getRecipe().getDisplayName() + " §a并返还剩余材料"), true);
 
         // 同步任务列表
         syncTasks(player);
