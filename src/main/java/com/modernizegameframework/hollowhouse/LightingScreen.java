@@ -1,6 +1,5 @@
 package com.modernizegameframework.hollowhouse;
 
-import com.modernizegameframework.ui.UIPanel;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -24,7 +23,6 @@ public class LightingScreen extends Screen {
 
     private int leftPos;
     private int topPos;
-    private UIPanel mainPanel;
     private final Button[] levelButtons = new Button[3];
 
     public LightingScreen(int unlockedLevel, int selectedLevel) {
@@ -37,10 +35,6 @@ public class LightingScreen extends Screen {
     protected void init() {
         this.leftPos = (this.width - PANEL_WIDTH) / 2;
         this.topPos = (this.height - PANEL_HEIGHT) / 2;
-
-        mainPanel = new UIPanel(leftPos, topPos, PANEL_WIDTH, PANEL_HEIGHT);
-        mainPanel.setBackgroundColor(0xB02A2A2A);
-        mainPanel.setBorderColor(0xFF555555);
 
         int totalButtonWidth = 3 * BUTTON_WIDTH + 2 * BUTTON_GAP;
         int startX = leftPos + (PANEL_WIDTH - totalButtonWidth) / 2;
@@ -91,9 +85,10 @@ public class LightingScreen extends Screen {
     @Override
     public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
-        if (mainPanel != null) {
-            mainPanel.render(graphics, mouseX, mouseY, partialTick);
-        }
+        // 绘制面板背景
+        graphics.fill(leftPos, topPos, leftPos + PANEL_WIDTH, topPos + PANEL_HEIGHT, 0xB02A2A2A);
+        graphics.renderOutline(leftPos, topPos, PANEL_WIDTH, PANEL_HEIGHT, 0xFF555555);
+
         super.render(graphics, mouseX, mouseY, partialTick);
         renderPanelText(graphics);
     }

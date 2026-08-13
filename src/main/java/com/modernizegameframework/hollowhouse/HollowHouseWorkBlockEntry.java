@@ -1,6 +1,5 @@
 package com.modernizegameframework.hollowhouse;
 
-import com.modernizegameframework.ui.UIComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 
@@ -10,10 +9,16 @@ import java.util.function.Consumer;
  * 藏身处工作方块左侧栏条目组件
  * 显示工作方块名称、锁定/解锁状态，并支持点击选中
  */
-public class HollowHouseWorkBlockEntry extends UIComponent {
+public class HollowHouseWorkBlockEntry {
 
     /** 条目高度 */
     public static final int ENTRY_HEIGHT = 28;
+
+    /** 位置与尺寸 */
+    protected int x, y, width, height;
+    /** 是否可见可用 */
+    protected boolean visible = true;
+    protected boolean enabled = true;
 
     /** 当前条目对应的工作方块类型 */
     private final HollowHouseWorkBlockType workBlockType;
@@ -39,7 +44,10 @@ public class HollowHouseWorkBlockEntry extends UIComponent {
 
     public HollowHouseWorkBlockEntry(int x, int y, int width,
                                      HollowHouseWorkBlockType type, int currentLevel) {
-        super(x, y, width, ENTRY_HEIGHT);
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = ENTRY_HEIGHT;
         this.workBlockType = type;
         this.currentLevel = currentLevel;
     }
@@ -79,8 +87,15 @@ public class HollowHouseWorkBlockEntry extends UIComponent {
         this.onClick = onClick;
     }
 
-    @Override
+    /**
+     * 判断鼠标是否悬停在此组件上
+     */
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+    }
+
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (!visible) return;
         boolean hovered = isMouseOver(mouseX, mouseY);
         int bgColor = selected ? SELECTED_BG : (hovered ? HOVER_BG : DEFAULT_BG);
 
@@ -99,7 +114,6 @@ public class HollowHouseWorkBlockEntry extends UIComponent {
                 currentLevel == 0 ? LOCKED_TEXT : UNLOCKED_TEXT, false);
     }
 
-    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (!visible || !enabled || !isMouseOver(mouseX, mouseY)) {
             return false;

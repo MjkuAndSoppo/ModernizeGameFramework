@@ -74,6 +74,10 @@ minecraft {
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
             property 'forge.logging.console.level', 'debug'
 
+            // Mixin 引用映射重映射：确保外部依赖的 mixin 在开发环境下正确解析
+            jvmArg "-Dmixin.env.remapRefMap=true"
+            jvmArg "-Dmixin.env.refMapRemapperFile=${buildDir}/createSrgToMcp/output.srg"
+
             mods {
                 "${mod_id}" {
                     source sourceSets.main
@@ -82,11 +86,8 @@ minecraft {
         }
 
         client {
-            // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
+            // Comma-comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
-            // 启用 Mixin refmap 重映射，解决 Curios 等依赖在 official 映射下的 mixin 崩溃
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemapperFile', "${buildDir}/createSrgToMcp/output.srg"
         }
 
         server {
@@ -120,6 +121,9 @@ repositories {
 
     // Curios API
     maven { url = "https://maven.theillusivec4.top/" }
+
+    // AUI (ApricityUI) 官方 Maven
+    maven { url = "https://maven.sighs.cc/repository/maven-public/" }
 
     // If you have mod jar dependencies in ./libs, you can declare them as a repository like so.
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:flat_dir_resolver

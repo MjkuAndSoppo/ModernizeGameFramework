@@ -1,8 +1,5 @@
 package com.modernizegameframework.hollowhouse;
 
-import com.modernizegameframework.ui.UIBlurBackground;
-import com.modernizegameframework.ui.UIPanel;
-import com.modernizegameframework.ui.UIScrollPanel;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -12,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * 供电站界面
@@ -36,16 +34,22 @@ public class PowerStationScreen extends Screen {
     /** 右侧燃料条目图标尺寸 */
     private static final int FUEL_ICON_SIZE = 16;
 
+    /** 滚动条宽度 */
+    private static final int SCROLLBAR_WIDTH = 6;
+
     /** 界面整体左上角坐标 */
     private int leftPos;
     private int topPos;
+
+    /** 主面板坐标与尺寸 */
+    private int mainPanelX, mainPanelY, mainPanelW, mainPanelH;
+    /** 右侧燃料面板坐标与尺寸 */
+    private int fuelPanelX, fuelPanelY, fuelPanelW, fuelPanelH;
 
     private final int powerLevel;
     private PowerStationData powerStationData;
     private final List<ItemStack> storehouseFuelItems;
 
-    private UIPanel mainPanel;
-    private UIScrollPanel fuelInventoryPanel;
     private Button toggleButton;
 
     private final List<FuelSlotEntry> fuelSlotEntries = new ArrayList<>();
@@ -53,6 +57,12 @@ public class PowerStationScreen extends Screen {
 
     /** 当前选中的燃油槽位索引，-1 表示未选中 */
     private int selectedSlotIndex = -1;
+
+    // ===== 右侧燃料面板滚动状态 =====
+    private int fuelScrollOffset = 0;
+    private int fuelContentHeight = 0;
+    private boolean fuelDraggingScrollbar = false;
+    private double fuelDragStartYOffset = 0;
 
     public PowerStationScreen(int powerLevel, PowerStationData data, List<ItemStack> storehouseFuelItems) {
         super(Component.literal("供电站"));
@@ -68,15 +78,17 @@ public class PowerStationScreen extends Screen {
         this.topPos = (this.height - MAIN_PANEL_HEIGHT) / 2;
 
         // 主面板
-        mainPanel = new UIPanel(leftPos, topPos, MAIN_PANEL_WIDTH, MAIN_PANEL_HEIGHT);
-        mainPanel.setBackgroundColor(0xB02A2A2A);
-        mainPanel.setBorderColor(0xFF555555);
+        mainPanelX = leftPos;
+        mainPanelY = topPos;
+        mainPanelW = MAIN_PANEL_WIDTH;
+        mainPanelH = MAIN_PANEL_HEIGHT;
 
-        // 右侧燃料列表面板（可滚动）
-        fuelInventoryPanel = new UIScrollPanel(leftPos + MAIN_PANEL_WIDTH + PANEL_GAP, topPos,
-                RIGHT_PANEL_WIDTH, MAIN_PANEL_HEIGHT);
-        fuelInventoryPanel.setBackgroundColor(0xFF2A2A2A);
-        fuelInventoryPanel.setBorderColor(0xFF555555);
+        // 右侧燃料面板
+        fuelPanelX = leftPos + MAIN_PANEL_WIDTH + PANEL_GAP;
+        fuelPanelY = topPos;
+        fuelPanelW = RIGHT_PANEL_WIDTH;
+        fuelPanelH = MAIN_PANEL_HEIGHT;
+
         buildFuelSlotEntries();
         buildFuelItemEntries();
 
@@ -95,12 +107,11 @@ public class PowerStationScreen extends Screen {
      */
     private void buildFuelSlotEntries() {
         fuelSlotEntries.clear();
-        mainPanel.clearChildren();
 
         int slotCount = powerLevel;
         int totalSlotWidth = slotCount * FUEL_SLOT_SIZE + (slotCount - 1) * 4;
-        int startX = mainPanel.getX() + (MAIN_PANEL_WIDTH - totalSlotWidth) / 2;
-        int slotY = mainPanel.getY() + 92;
+        int startX = mainPanelX + (MAIN_PANEL_WIDTH - totalSlotWidth) / 2;
+        int slotY = mainPanelY + 92;
 
         List<ItemStack> slots = powerStationData.getFuelSlots();
         for (int i = 0; i < slotCount; i++) {
@@ -109,7 +120,6 @@ public class PowerStationScreen extends Screen {
                     FUEL_SLOT_SIZE, FUEL_SLOT_SIZE, stack, i);
             entry.setSelected(i == selectedSlotIndex);
             entry.setOnClick(index -> onFuelSlotClicked(index));
-            mainPanel.addChild(entry);
             fuelSlotEntries.add(entry);
         }
     }
@@ -119,19 +129,18 @@ public class PowerStationScreen extends Screen {
      */
     private void buildFuelItemEntries() {
         fuelItemEntries.clear();
-        fuelInventoryPanel.clearChildren();
 
-        int entryWidth = RIGHT_PANEL_WIDTH - UIScrollPanel.SCROLLBAR_WIDTH - 1;
+        int entryWidth = RIGHT_PANEL_WIDTH - SCROLLBAR_WIDTH - 1;
         int contentHeight = Math.max(MAIN_PANEL_HEIGHT, storehouseFuelItems.size() * FUEL_ENTRY_HEIGHT);
-        fuelInventoryPanel.setContentHeight(contentHeight);
+        fuelContentHeight = contentHeight;
+        fuelScrollOffset = 0;
 
         for (int i = 0; i < storehouseFuelItems.size(); i++) {
             ItemStack stack = storehouseFuelItems.get(i);
             FuelItemEntry entry = new FuelItemEntry(
-                    fuelInventoryPanel.getX(), fuelInventoryPanel.getY() + i * FUEL_ENTRY_HEIGHT,
+                    fuelPanelX, fuelPanelY + i * FUEL_ENTRY_HEIGHT,
                     entryWidth, FUEL_ENTRY_HEIGHT, stack, i);
             entry.setOnClick(index -> onFuelItemClicked(index));
-            fuelInventoryPanel.addChild(entry);
             fuelItemEntries.add(entry);
         }
     }
@@ -216,7 +225,7 @@ public class PowerStationScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         // 绘制毛玻璃背景
-        UIBlurBackground.render(graphics, this.width, this.height, UIBlurBackground.LIGHT_OVERLAY);
+        graphics.fillGradient(0, 0, this.width, this.height, 0xCC0A0A0A, 0xCC0A0A0A);
 
         // 标题
         graphics.drawString(this.font, this.title,
@@ -224,9 +233,11 @@ public class PowerStationScreen extends Screen {
                         - this.font.width(this.title) / 2,
                 topPos - 14, 0xFFFFFFFF, false);
 
-        // 渲染主面板与右侧滚动面板
-        mainPanel.render(graphics, mouseX, mouseY, partialTick);
-        fuelInventoryPanel.render(graphics, mouseX, mouseY, partialTick);
+        // 渲染主面板
+        renderMainPanel(graphics, mouseX, mouseY, partialTick);
+
+        // 渲染右侧燃料面板
+        renderFuelPanel(graphics, mouseX, mouseY, partialTick);
 
         // 渲染主面板文本内容
         renderMainPanelText(graphics);
@@ -239,11 +250,70 @@ public class PowerStationScreen extends Screen {
     }
 
     /**
+     * 渲染主面板背景、边框与燃油槽位
+     */
+    private void renderMainPanel(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        // 主面板背景
+        graphics.fill(mainPanelX, mainPanelY, mainPanelX + mainPanelW, mainPanelY + mainPanelH, 0xB02A2A2A);
+        // 主面板边框
+        graphics.renderOutline(mainPanelX, mainPanelY, mainPanelW, mainPanelH, 0xFF555555);
+
+        // 渲染燃油槽位
+        for (FuelSlotEntry entry : fuelSlotEntries) {
+            entry.render(graphics, mouseX, mouseY, partialTick);
+        }
+    }
+
+    /**
+     * 渲染右侧燃料面板背景、边框、燃料条目（带滚动裁剪）与滚动条
+     */
+    private void renderFuelPanel(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        // 燃料面板背景
+        graphics.fill(fuelPanelX, fuelPanelY, fuelPanelX + fuelPanelW, fuelPanelY + fuelPanelH, 0xFF2A2A2A);
+        // 燃料面板边框
+        graphics.renderOutline(fuelPanelX, fuelPanelY, fuelPanelW, fuelPanelH, 0xFF555555);
+
+        // 渲染燃料条目（带滚动裁剪）
+        graphics.pose().pushPose();
+        graphics.enableScissor(fuelPanelX, fuelPanelY, fuelPanelX + fuelPanelW, fuelPanelY + fuelPanelH);
+        graphics.pose().translate(0, -fuelScrollOffset, 0);
+        for (FuelItemEntry entry : fuelItemEntries) {
+            entry.render(graphics, mouseX, mouseY, partialTick);
+        }
+        graphics.disableScissor();
+        graphics.pose().popPose();
+
+        // 渲染滚动条
+        renderFuelScrollbar(graphics);
+    }
+
+    /**
+     * 渲染右侧燃料面板的滚动条
+     */
+    private void renderFuelScrollbar(GuiGraphics graphics) {
+        if (fuelContentHeight <= fuelPanelH) {
+            return;
+        }
+        int scrollbarX = fuelPanelX + fuelPanelW - SCROLLBAR_WIDTH - 1;
+        int scrollbarY = fuelPanelY + 1;
+        int scrollbarHeight = fuelPanelH - 2;
+        // 滚动条背景
+        graphics.fill(scrollbarX, scrollbarY, scrollbarX + SCROLLBAR_WIDTH, scrollbarY + scrollbarHeight, 0xFF222222);
+        // 滚动条滑块
+        float ratio = (float) fuelPanelH / fuelContentHeight;
+        int thumbHeight = Math.max(10, (int) (scrollbarHeight * ratio));
+        int maxOffset = fuelContentHeight - fuelPanelH;
+        int thumbY = scrollbarY + (maxOffset == 0 ? 0
+                : (int) ((scrollbarHeight - thumbHeight) * ((float) fuelScrollOffset / maxOffset)));
+        graphics.fill(scrollbarX, thumbY, scrollbarX + SCROLLBAR_WIDTH, thumbY + thumbHeight, 0xFF777777);
+    }
+
+    /**
      * 渲染主面板文本信息
      */
     private void renderMainPanelText(GuiGraphics graphics) {
-        int x = mainPanel.getX() + 8;
-        int y = mainPanel.getY() + 8;
+        int x = mainPanelX + 8;
+        int y = mainPanelY + 8;
         int lineHeight = 12;
 
         // 名称
@@ -272,12 +342,12 @@ public class PowerStationScreen extends Screen {
         // 燃油槽位标签
         String slotLabel = "燃油槽位 (" + powerLevel + "/" + powerLevel + ")";
         graphics.drawString(this.font, Component.literal(slotLabel),
-                mainPanel.getX() + (MAIN_PANEL_WIDTH - this.font.width(slotLabel)) / 2,
+                mainPanelX + (MAIN_PANEL_WIDTH - this.font.width(slotLabel)) / 2,
                 y, 0xFFFFFFFF, false);
 
         // 右侧面板标题（绘制在面板上方，避免遮挡滚动内容）
         graphics.drawString(this.font, Component.literal("可用燃料"),
-                fuelInventoryPanel.getX() + 4, fuelInventoryPanel.getY() - 12, 0xFFFFFFFF, false);
+                fuelPanelX + 4, fuelPanelY - 12, 0xFFFFFFFF, false);
     }
 
     /**
@@ -291,11 +361,15 @@ public class PowerStationScreen extends Screen {
                 return;
             }
         }
-        // 右侧燃料条目提示
-        for (FuelItemEntry entry : fuelItemEntries) {
-            if (entry.isMouseOver(mouseX, mouseY) && !entry.getStack().isEmpty()) {
-                graphics.renderTooltip(this.font, entry.getStack(), mouseX, mouseY);
-                return;
+        // 右侧燃料条目提示（考虑滚动偏移）
+        if (mouseX >= fuelPanelX && mouseX < fuelPanelX + fuelPanelW
+                && mouseY >= fuelPanelY && mouseY < fuelPanelY + fuelPanelH) {
+            double adjustedMouseY = mouseY + fuelScrollOffset;
+            for (FuelItemEntry entry : fuelItemEntries) {
+                if (entry.isMouseOver(mouseX, adjustedMouseY) && !entry.getStack().isEmpty()) {
+                    graphics.renderTooltip(this.font, entry.getStack(), mouseX, mouseY);
+                    return;
+                }
             }
         }
     }
@@ -313,35 +387,95 @@ public class PowerStationScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (mainPanel.mouseClicked(mouseX, mouseY, button)) {
-            return true;
+        // 检查燃油槽位点击
+        for (FuelSlotEntry entry : fuelSlotEntries) {
+            if (entry.mouseClicked(mouseX, mouseY, button)) {
+                return true;
+            }
         }
-        if (fuelInventoryPanel.mouseClicked(mouseX, mouseY, button)) {
-            return true;
+        // 检查右侧燃料面板交互
+        if (mouseX >= fuelPanelX && mouseX < fuelPanelX + fuelPanelW
+                && mouseY >= fuelPanelY && mouseY < fuelPanelY + fuelPanelH) {
+            // 检查滚动条点击
+            if (fuelContentHeight > fuelPanelH) {
+                int scrollbarX = fuelPanelX + fuelPanelW - SCROLLBAR_WIDTH - 1;
+                int scrollbarY = fuelPanelY + 1;
+                int scrollbarHeight = fuelPanelH - 2;
+                if (mouseX >= scrollbarX && mouseX < scrollbarX + SCROLLBAR_WIDTH
+                        && mouseY >= scrollbarY && mouseY < scrollbarY + scrollbarHeight) {
+                    fuelDraggingScrollbar = true;
+                    fuelDragStartYOffset = mouseY - getFuelScrollbarThumbY();
+                    return true;
+                }
+            }
+            // 检查燃料条目点击（考虑滚动偏移）
+            double adjustedMouseY = mouseY + fuelScrollOffset;
+            for (FuelItemEntry entry : fuelItemEntries) {
+                if (entry.mouseClicked(mouseX, adjustedMouseY, button)) {
+                    return true;
+                }
+            }
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        mainPanel.mouseReleased(mouseX, mouseY, button);
-        fuelInventoryPanel.mouseReleased(mouseX, mouseY, button);
+        fuelDraggingScrollbar = false;
         return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        mainPanel.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-        fuelInventoryPanel.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        if (fuelDraggingScrollbar && fuelContentHeight > fuelPanelH) {
+            int scrollbarY = fuelPanelY + 1;
+            int scrollbarHeight = fuelPanelH - 2;
+            float ratio = (float) fuelPanelH / fuelContentHeight;
+            int thumbHeight = Math.max(10, (int) (scrollbarHeight * ratio));
+            int trackHeight = scrollbarHeight - thumbHeight;
+            int relativeY = (int) (mouseY - fuelDragStartYOffset - scrollbarY);
+            if (trackHeight > 0) {
+                int maxOffset = fuelContentHeight - fuelPanelH;
+                fuelScrollOffset = (int) ((double) relativeY / trackHeight * maxOffset);
+                clampFuelScrollOffset();
+            }
+            return true;
+        }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (fuelInventoryPanel.mouseScrolled(mouseX, mouseY, delta)) {
+        if (mouseX >= fuelPanelX && mouseX < fuelPanelX + fuelPanelW
+                && mouseY >= fuelPanelY && mouseY < fuelPanelY + fuelPanelH
+                && fuelContentHeight > fuelPanelH) {
+            fuelScrollOffset -= (int) (delta * 10);
+            clampFuelScrollOffset();
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
+    }
+
+    /**
+     * 限制燃料面板滚动偏移在有效范围内
+     */
+    private void clampFuelScrollOffset() {
+        int maxOffset = Math.max(0, fuelContentHeight - fuelPanelH);
+        if (fuelScrollOffset < 0) fuelScrollOffset = 0;
+        if (fuelScrollOffset > maxOffset) fuelScrollOffset = maxOffset;
+    }
+
+    /**
+     * 获取燃料面板滚动条滑块当前 Y 坐标
+     */
+    private int getFuelScrollbarThumbY() {
+        int scrollbarY = fuelPanelY + 1;
+        int scrollbarHeight = fuelPanelH - 2;
+        float ratio = (float) fuelPanelH / fuelContentHeight;
+        int thumbHeight = Math.max(10, (int) (scrollbarHeight * ratio));
+        int maxOffset = fuelContentHeight - fuelPanelH;
+        return scrollbarY + (maxOffset == 0 ? 0
+                : (int) ((scrollbarHeight - thumbHeight) * ((float) fuelScrollOffset / maxOffset)));
     }
 
     @Override
@@ -358,22 +492,28 @@ public class PowerStationScreen extends Screen {
         updateToggleButtonText();
     }
 
-    /**
-     * 燃油槽位显示组件
-     */
-    private class FuelSlotEntry extends UIPanel {
+    // ===== 燃油槽位显示组件 =====
 
+    /**
+     * 燃油槽位显示组件（不继承 UI 组件，自主实现渲染与交互）
+     */
+    private class FuelSlotEntry {
+
+        private final int x, y, width, height;
         private final ItemStack stack;
         private final int index;
         private boolean selected;
-        private java.util.function.Consumer<Integer> onClick;
+        private Consumer<Integer> onClick;
+        private int backgroundColor = 0xFF333333;
+        private int borderColor = 0xFF555555;
 
         public FuelSlotEntry(int x, int y, int width, int height, ItemStack stack, int index) {
-            super(x, y, width, height);
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
             this.stack = stack;
             this.index = index;
-            setBackgroundColor(0xFF333333);
-            setBorderColor(0xFF555555);
         }
 
         public ItemStack getStack() {
@@ -386,16 +526,20 @@ public class PowerStationScreen extends Screen {
 
         public void setSelected(boolean selected) {
             this.selected = selected;
-            setBorderColor(selected ? 0xFFFFFF00 : 0xFF555555);
+            this.borderColor = selected ? 0xFFFFFF00 : 0xFF555555;
         }
 
-        public void setOnClick(java.util.function.Consumer<Integer> onClick) {
+        public void setOnClick(Consumer<Integer> onClick) {
             this.onClick = onClick;
         }
 
-        @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            super.render(graphics, mouseX, mouseY, partialTick);
+            // 绘制背景
+            graphics.fill(x, y, x + width, y + height, backgroundColor);
+            // 绘制边框
+            graphics.renderOutline(x, y, width, height, borderColor);
+
+            // 绘制物品图标
             if (!stack.isEmpty()) {
                 int iconX = x + (width - 16) / 2;
                 int iconY = y + (height - 16) / 2;
@@ -404,7 +548,6 @@ public class PowerStationScreen extends Screen {
             }
         }
 
-        @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
             if (isMouseOver(mouseX, mouseY) && onClick != null) {
                 onClick.accept(index);
@@ -412,36 +555,48 @@ public class PowerStationScreen extends Screen {
             }
             return false;
         }
+
+        public boolean isMouseOver(double mouseX, double mouseY) {
+            return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+        }
     }
 
-    /**
-     * 右侧仓库燃料条目组件
-     */
-    private class FuelItemEntry extends UIPanel {
+    // ===== 右侧仓库燃料条目组件 =====
 
+    /**
+     * 右侧仓库燃料条目组件（不继承 UI 组件，自主实现渲染与交互）
+     */
+    private class FuelItemEntry {
+
+        private final int x, y, width, height;
         private final ItemStack stack;
         private final int index;
-        private java.util.function.Consumer<Integer> onClick;
+        private Consumer<Integer> onClick;
+        private int backgroundColor = 0xFF333333;
+        private int borderColor = 0xFF555555;
 
         public FuelItemEntry(int x, int y, int width, int height, ItemStack stack, int index) {
-            super(x, y, width, height);
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
             this.stack = stack;
             this.index = index;
-            setBackgroundColor(0xFF333333);
-            setBorderColor(0xFF555555);
         }
 
         public ItemStack getStack() {
             return stack;
         }
 
-        public void setOnClick(java.util.function.Consumer<Integer> onClick) {
+        public void setOnClick(Consumer<Integer> onClick) {
             this.onClick = onClick;
         }
 
-        @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            super.render(graphics, mouseX, mouseY, partialTick);
+            // 绘制背景
+            graphics.fill(x, y, x + width, y + height, backgroundColor);
+            // 绘制边框
+            graphics.renderOutline(x, y, width, height, borderColor);
 
             // 图标
             int iconX = x + 2;
@@ -468,13 +623,16 @@ public class PowerStationScreen extends Screen {
                     y + height - 10, 0xFFAAAAAA, false);
         }
 
-        @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
             if (isMouseOver(mouseX, mouseY) && onClick != null) {
                 onClick.accept(index);
                 return true;
             }
             return false;
+        }
+
+        public boolean isMouseOver(double mouseX, double mouseY) {
+            return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
         }
     }
 }

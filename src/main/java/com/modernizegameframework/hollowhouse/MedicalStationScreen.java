@@ -1,8 +1,5 @@
 package com.modernizegameframework.hollowhouse;
 
-import com.modernizegameframework.ui.UIBlurBackground;
-import com.modernizegameframework.ui.UIPanel;
-import com.modernizegameframework.ui.UIScrollPanel;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -35,6 +32,9 @@ public class MedicalStationScreen extends Screen {
     /** 任务列表条目高度 */
     private static final int TASK_ENTRY_HEIGHT = 18;
 
+    /** 滚动条宽度 */
+    private static final int SCROLLBAR_WIDTH = 6;
+
     /** 界面整体左上角坐标 */
     private int leftPos;
     private int topPos;
@@ -47,9 +47,16 @@ public class MedicalStationScreen extends Screen {
     private MedicalTask selectedTask;
     private int selectedTaskIndex = -1;
 
-    private UIScrollPanel recipePanel;
-    private UIPanel detailPanel;
-    private UIScrollPanel taskPanel;
+    // 三个面板的坐标与尺寸（替代 UIPanel / UIScrollPanel 对象）
+    private int recipePanelX, recipePanelY, recipePanelW, recipePanelH;
+    private int detailPanelX, detailPanelY, detailPanelW, detailPanelH;
+    private int taskPanelX, taskPanelY, taskPanelW, taskPanelH;
+
+    // 滚动偏移量
+    private int recipeScrollOffset = 0;
+    private int taskScrollOffset = 0;
+    private int recipeContentHeight;
+    private int taskContentHeight;
 
     private EditBox amountEditBox;
     private Button craftButton;
@@ -83,28 +90,32 @@ public class MedicalStationScreen extends Screen {
         this.leftPos = (this.width - totalWidth) / 2;
         this.topPos = (this.height - MAIN_PANEL_HEIGHT) / 2;
 
-        // 左侧配方列表面板
-        recipePanel = new UIScrollPanel(leftPos, topPos, LEFT_PANEL_WIDTH, MAIN_PANEL_HEIGHT);
-        recipePanel.setBackgroundColor(0xFF2A2A2A);
-        recipePanel.setBorderColor(0xFF555555);
+        // 左侧配方列表面板坐标
+        recipePanelX = leftPos;
+        recipePanelY = topPos;
+        recipePanelW = LEFT_PANEL_WIDTH;
+        recipePanelH = MAIN_PANEL_HEIGHT;
+
+        // 中间详情面板坐标
+        detailPanelX = leftPos + LEFT_PANEL_WIDTH + PANEL_GAP;
+        detailPanelY = topPos;
+        detailPanelW = MAIN_PANEL_WIDTH;
+        detailPanelH = MAIN_PANEL_HEIGHT;
+
+        // 右侧任务列表面板坐标
+        taskPanelX = leftPos + LEFT_PANEL_WIDTH + PANEL_GAP + MAIN_PANEL_WIDTH + PANEL_GAP;
+        taskPanelY = topPos;
+        taskPanelW = RIGHT_PANEL_WIDTH;
+        taskPanelH = MAIN_PANEL_HEIGHT;
+
         buildRecipeList();
-
-        // 中间详情面板
-        detailPanel = new UIPanel(leftPos + LEFT_PANEL_WIDTH + PANEL_GAP, topPos, MAIN_PANEL_WIDTH, MAIN_PANEL_HEIGHT);
-        detailPanel.setBackgroundColor(0xB02A2A2A);
-        detailPanel.setBorderColor(0xFF555555);
-
-        // 右侧任务列表面板
-        taskPanel = new UIScrollPanel(leftPos + LEFT_PANEL_WIDTH + PANEL_GAP + MAIN_PANEL_WIDTH + PANEL_GAP, topPos, RIGHT_PANEL_WIDTH, MAIN_PANEL_HEIGHT);
-        taskPanel.setBackgroundColor(0xFF2A2A2A);
-        taskPanel.setBorderColor(0xFF555555);
         buildTaskList();
 
         // 数量编辑框与按钮（仅在选择配方时显示）
-        int centerX = detailPanel.getX() + MAIN_PANEL_WIDTH / 2;
+        int centerX = detailPanelX + MAIN_PANEL_WIDTH / 2;
         int editBoxWidth = 40;
         int editBoxX = centerX - editBoxWidth / 2;
-        int editBoxY = detailPanel.getY() + MAIN_PANEL_HEIGHT - 55;
+        int editBoxY = detailPanelY + MAIN_PANEL_HEIGHT - 55;
 
         amountEditBox = new EditBox(this.font, editBoxX, editBoxY, editBoxWidth, 16, Component.literal("1"));
         amountEditBox.setValue("1");
@@ -142,20 +153,18 @@ public class MedicalStationScreen extends Screen {
      */
     private void buildRecipeList() {
         recipeEntries.clear();
-        recipePanel.clearChildren();
+        recipeScrollOffset = 0;
 
-        int entryWidth = LEFT_PANEL_WIDTH - UIScrollPanel.SCROLLBAR_WIDTH - 1;
-        int contentHeight = Math.max(MAIN_PANEL_HEIGHT, availableRecipes.size() * RECIPE_ENTRY_HEIGHT);
-        recipePanel.setContentHeight(contentHeight);
+        int entryWidth = recipePanelW - SCROLLBAR_WIDTH - 1;
+        recipeContentHeight = Math.max(recipePanelH, availableRecipes.size() * RECIPE_ENTRY_HEIGHT);
 
         for (int i = 0; i < availableRecipes.size(); i++) {
             MedicalRecipe recipe = availableRecipes.get(i);
             RecipeListEntry entry = new RecipeListEntry(
-                    recipePanel.getX(), recipePanel.getY() + i * RECIPE_ENTRY_HEIGHT,
+                    recipePanelX, recipePanelY + i * RECIPE_ENTRY_HEIGHT,
                     entryWidth, RECIPE_ENTRY_HEIGHT, recipe);
             entry.setSelected(recipe == selectedRecipe && selectedTask == null);
             entry.setOnClick(r -> selectRecipe(r));
-            recipePanel.addChild(entry);
             recipeEntries.add(entry);
         }
     }
@@ -165,20 +174,18 @@ public class MedicalStationScreen extends Screen {
      */
     private void buildTaskList() {
         taskEntries.clear();
-        taskPanel.clearChildren();
+        taskScrollOffset = 0;
 
-        int entryWidth = RIGHT_PANEL_WIDTH - UIScrollPanel.SCROLLBAR_WIDTH - 1;
-        int contentHeight = Math.max(MAIN_PANEL_HEIGHT, tasks.size() * TASK_ENTRY_HEIGHT);
-        taskPanel.setContentHeight(contentHeight);
+        int entryWidth = taskPanelW - SCROLLBAR_WIDTH - 1;
+        taskContentHeight = Math.max(taskPanelH, tasks.size() * TASK_ENTRY_HEIGHT);
 
         for (int i = 0; i < tasks.size(); i++) {
             MedicalTask task = tasks.get(i);
             TaskListEntry entry = new TaskListEntry(
-                    taskPanel.getX(), taskPanel.getY() + i * TASK_ENTRY_HEIGHT,
+                    taskPanelX, taskPanelY + i * TASK_ENTRY_HEIGHT,
                     entryWidth, TASK_ENTRY_HEIGHT, task, i);
             entry.setSelected(selectedTaskIndex == i);
             entry.setOnClick((t, index) -> selectTask(t, index));
-            taskPanel.addChild(entry);
             taskEntries.add(entry);
         }
     }
@@ -313,8 +320,8 @@ public class MedicalStationScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // 绘制毛玻璃背景
-        UIBlurBackground.render(graphics, this.width, this.height, UIBlurBackground.LIGHT_OVERLAY);
+        // 绘制毛玻璃背景（使用渐变填充替代 UIBlurBackground）
+        graphics.fillGradient(0, 0, this.width, this.height, 0xCC000000, 0xCC000000);
 
         // 标题
         graphics.drawString(this.font, this.title,
@@ -322,16 +329,72 @@ public class MedicalStationScreen extends Screen {
                         - this.font.width(this.title) / 2,
                 topPos - 14, 0xFFFFFFFF, false);
 
-        // 渲染三个面板
-        recipePanel.render(graphics, mouseX, mouseY, partialTick);
-        detailPanel.render(graphics, mouseX, mouseY, partialTick);
-        taskPanel.render(graphics, mouseX, mouseY, partialTick);
+        // ===== 渲染左侧配方列表面板 =====
+        renderPanel(graphics, recipePanelX, recipePanelY, recipePanelW, recipePanelH, 0xFF2A2A2A, 0xFF555555);
 
-        // 渲染中间详情面板内容
+        // 渲染配方条目（应用滚动偏移）
+        for (RecipeListEntry entry : recipeEntries) {
+            int visualY = entry.getBaseY() - recipeScrollOffset;
+            // 裁剪：只渲染可见区域内的条目
+            if (visualY + entry.getHeight() > recipePanelY && visualY < recipePanelY + recipePanelH) {
+                entry.render(graphics, mouseX, mouseY, partialTick, visualY);
+            }
+        }
+
+        // 渲染左侧滚动条
+        renderScrollbar(graphics, recipePanelX, recipePanelY, recipePanelW, recipePanelH,
+                recipeScrollOffset, recipeContentHeight);
+
+        // ===== 渲染中间详情面板 =====
+        renderPanel(graphics, detailPanelX, detailPanelY, detailPanelW, detailPanelH, 0xB02A2A2A, 0xFF555555);
         renderDetailPanel(graphics);
+
+        // ===== 渲染右侧任务列表面板 =====
+        renderPanel(graphics, taskPanelX, taskPanelY, taskPanelW, taskPanelH, 0xFF2A2A2A, 0xFF555555);
+
+        // 渲染任务条目（应用滚动偏移）
+        for (TaskListEntry entry : taskEntries) {
+            int visualY = entry.getBaseY() - taskScrollOffset;
+            // 裁剪：只渲染可见区域内的条目
+            if (visualY + entry.getHeight() > taskPanelY && visualY < taskPanelY + taskPanelH) {
+                entry.render(graphics, mouseX, mouseY, partialTick, visualY);
+            }
+        }
+
+        // 渲染右侧滚动条
+        renderScrollbar(graphics, taskPanelX, taskPanelY, taskPanelW, taskPanelH,
+                taskScrollOffset, taskContentHeight);
 
         // 渲染原版组件（按钮、编辑框）
         super.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    /**
+     * 绘制面板背景与边框
+     */
+    private void renderPanel(GuiGraphics graphics, int x, int y, int w, int h, int bgColor, int borderColor) {
+        graphics.fill(x, y, x + w, y + h, bgColor);
+        graphics.renderOutline(x, y, w, h, borderColor);
+    }
+
+    /**
+     * 渲染滚动条
+     */
+    private void renderScrollbar(GuiGraphics graphics, int panelX, int panelY, int panelW, int panelH,
+                                 int scrollOffset, int contentHeight) {
+        if (contentHeight <= panelH) {
+            return;
+        }
+        int scrollbarX = panelX + panelW - SCROLLBAR_WIDTH;
+        int trackHeight = panelH;
+        int thumbHeight = Math.max(16, trackHeight * panelH / contentHeight);
+        int maxScroll = contentHeight - panelH;
+        int thumbY = panelY + (scrollOffset * (trackHeight - thumbHeight) / maxScroll);
+
+        // 轨道背景
+        graphics.fill(scrollbarX, panelY, scrollbarX + SCROLLBAR_WIDTH, panelY + trackHeight, 0xFF333333);
+        // 滑块
+        graphics.fill(scrollbarX, thumbY, scrollbarX + SCROLLBAR_WIDTH, thumbY + thumbHeight, 0xFF888888);
     }
 
     /**
@@ -340,7 +403,7 @@ public class MedicalStationScreen extends Screen {
     private void renderDetailPanel(GuiGraphics graphics) {
         // 右侧面板标题统一在面板上方绘制，避免遮挡滚动内容
         graphics.drawString(this.font, Component.literal("生产队列"),
-                taskPanel.getX() + 4, taskPanel.getY() - 12, 0xFFFFFFFF, false);
+                taskPanelX + 4, taskPanelY - 12, 0xFFFFFFFF, false);
 
         if (selectedTask != null) {
             renderTaskDetail(graphics);
@@ -355,8 +418,8 @@ public class MedicalStationScreen extends Screen {
      * 渲染配方详情
      */
     private void renderRecipeDetail(GuiGraphics graphics) {
-        int x = detailPanel.getX() + 8;
-        int y = detailPanel.getY() + 8;
+        int x = detailPanelX + 8;
+        int y = detailPanelY + 8;
         int lineHeight = 12;
 
         // 配方名称
@@ -386,9 +449,9 @@ public class MedicalStationScreen extends Screen {
         graphics.drawString(this.font, Component.literal("§7生产时间：§e" + selectedRecipe.getProductionSeconds() + " 秒"), x, y, 0xFFFFFFFF, false);
 
         // 数量标签
-        int editBoxY = detailPanel.getY() + MAIN_PANEL_HEIGHT - 55;
+        int editBoxY = detailPanelY + MAIN_PANEL_HEIGHT - 55;
         graphics.drawString(this.font, Component.literal("制作数量"),
-                detailPanel.getX() + MAIN_PANEL_WIDTH / 2 - this.font.width("制作数量") / 2,
+                detailPanelX + MAIN_PANEL_WIDTH / 2 - this.font.width("制作数量") / 2,
                 editBoxY - 12, 0xFFFFFFFF, false);
     }
 
@@ -396,8 +459,8 @@ public class MedicalStationScreen extends Screen {
      * 渲染任务详情
      */
     private void renderTaskDetail(GuiGraphics graphics) {
-        int x = detailPanel.getX() + 8;
-        int y = detailPanel.getY() + 8;
+        int x = detailPanelX + 8;
+        int y = detailPanelY + 8;
         int lineHeight = 12;
 
         // 任务标题
@@ -435,35 +498,37 @@ public class MedicalStationScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (recipePanel.mouseClicked(mouseX, mouseY, button)) {
-            return true;
+        // 处理左侧配方列表点击
+        for (RecipeListEntry entry : recipeEntries) {
+            int visualY = entry.getBaseY() - recipeScrollOffset;
+            if (entry.isMouseOver(mouseX, mouseY, visualY) && entry.mouseClicked(mouseX, mouseY, button, visualY)) {
+                return true;
+            }
         }
-        if (taskPanel.mouseClicked(mouseX, mouseY, button)) {
-            return true;
+        // 处理右侧任务列表点击
+        for (TaskListEntry entry : taskEntries) {
+            int visualY = entry.getBaseY() - taskScrollOffset;
+            if (entry.isMouseOver(mouseX, mouseY, visualY) && entry.mouseClicked(mouseX, mouseY, button, visualY)) {
+                return true;
+            }
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        recipePanel.mouseReleased(mouseX, mouseY, button);
-        taskPanel.mouseReleased(mouseX, mouseY, button);
-        return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        recipePanel.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-        taskPanel.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-    }
-
-    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (recipePanel.mouseScrolled(mouseX, mouseY, delta)) {
+        // 处理左侧配方列表滚动
+        if (mouseX >= recipePanelX && mouseX < recipePanelX + recipePanelW &&
+                mouseY >= recipePanelY && mouseY < recipePanelY + recipePanelH) {
+            int maxScroll = Math.max(0, recipeContentHeight - recipePanelH);
+            recipeScrollOffset = Math.max(0, Math.min(maxScroll, recipeScrollOffset - (int) (delta * 10)));
             return true;
         }
-        if (taskPanel.mouseScrolled(mouseX, mouseY, delta)) {
+        // 处理右侧任务列表滚动
+        if (mouseX >= taskPanelX && mouseX < taskPanelX + taskPanelW &&
+                mouseY >= taskPanelY && mouseY < taskPanelY + taskPanelH) {
+            int maxScroll = Math.max(0, taskContentHeight - taskPanelH);
+            taskScrollOffset = Math.max(0, Math.min(maxScroll, taskScrollOffset - (int) (delta * 10)));
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
@@ -474,20 +539,37 @@ public class MedicalStationScreen extends Screen {
         return false;
     }
 
+    // ==================== 内部类定义 ====================
+
     /**
-     * 配方列表条目组件
+     * 配方列表条目组件（不继承任何 UI 组件，独立实现渲染与交互）
      */
-    private class RecipeListEntry extends UIPanel {
+    private class RecipeListEntry {
 
         private final MedicalRecipe recipe;
+        private final int baseX;
+        private final int baseY;
+        private final int width;
+        private final int height;
         private boolean selected;
+        private int backgroundColor = 0xFF333333;
+        private int borderColor = 0xFF555555;
         private java.util.function.Consumer<MedicalRecipe> onClick;
 
         public RecipeListEntry(int x, int y, int width, int height, MedicalRecipe recipe) {
-            super(x, y, width, height);
+            this.baseX = x;
+            this.baseY = y;
+            this.width = width;
+            this.height = height;
             this.recipe = recipe;
-            setBackgroundColor(0xFF333333);
-            setBorderColor(0xFF555555);
+        }
+
+        public int getBaseY() {
+            return baseY;
+        }
+
+        public int getHeight() {
+            return height;
         }
 
         public void setSelected(boolean selected) {
@@ -503,19 +585,34 @@ public class MedicalStationScreen extends Screen {
             return recipe;
         }
 
-        @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            super.render(graphics, mouseX, mouseY, partialTick);
+        public void setBackgroundColor(int color) {
+            this.backgroundColor = color;
+        }
+
+        public void setBorderColor(int color) {
+            this.borderColor = color;
+        }
+
+        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int visualY) {
+            // 绘制背景
+            graphics.fill(baseX, visualY, baseX + width, visualY + height, backgroundColor);
+            // 绘制边框
+            graphics.renderOutline(baseX, visualY, width, height, borderColor);
+            // 绘制文本
             String name = recipe.getDisplayName();
             if (font.width(name) > width - 4) {
                 name = font.plainSubstrByWidth(name, width - 8) + "...";
             }
-            graphics.drawString(font, Component.literal(name), x + 2, y + (height - 8) / 2, 0xFFFFFFFF, false);
+            graphics.drawString(font, Component.literal(name), baseX + 2, visualY + (height - 8) / 2, 0xFFFFFFFF, false);
         }
 
-        @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (isMouseOver(mouseX, mouseY) && onClick != null) {
+        public boolean isMouseOver(double mouseX, double mouseY, int visualY) {
+            return mouseX >= baseX && mouseX < baseX + width
+                    && mouseY >= visualY && mouseY < visualY + height;
+        }
+
+        public boolean mouseClicked(double mouseX, double mouseY, int button, int visualY) {
+            if (isMouseOver(mouseX, mouseY, visualY) && onClick != null) {
                 onClick.accept(recipe);
                 return true;
             }
@@ -524,21 +621,36 @@ public class MedicalStationScreen extends Screen {
     }
 
     /**
-     * 任务列表条目组件
+     * 任务列表条目组件（不继承任何 UI 组件，独立实现渲染与交互）
      */
-    private class TaskListEntry extends UIPanel {
+    private class TaskListEntry {
 
         private final MedicalTask task;
         private final int index;
+        private final int baseX;
+        private final int baseY;
+        private final int width;
+        private final int height;
         private boolean selected;
+        private int backgroundColor = 0xFF333333;
+        private int borderColor = 0xFF555555;
         private java.util.function.BiConsumer<MedicalTask, Integer> onClick;
 
         public TaskListEntry(int x, int y, int width, int height, MedicalTask task, int index) {
-            super(x, y, width, height);
+            this.baseX = x;
+            this.baseY = y;
+            this.width = width;
+            this.height = height;
             this.task = task;
             this.index = index;
-            setBackgroundColor(0xFF333333);
-            setBorderColor(0xFF555555);
+        }
+
+        public int getBaseY() {
+            return baseY;
+        }
+
+        public int getHeight() {
+            return height;
         }
 
         public int getIndex() {
@@ -558,19 +670,34 @@ public class MedicalStationScreen extends Screen {
             // 由 Screen.tick 调用，触发重绘即可
         }
 
-        @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            super.render(graphics, mouseX, mouseY, partialTick);
+        public void setBackgroundColor(int color) {
+            this.backgroundColor = color;
+        }
+
+        public void setBorderColor(int color) {
+            this.borderColor = color;
+        }
+
+        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int visualY) {
+            // 绘制背景
+            graphics.fill(baseX, visualY, baseX + width, visualY + height, backgroundColor);
+            // 绘制边框
+            graphics.renderOutline(baseX, visualY, width, height, borderColor);
+            // 绘制文本
             String text = task.getDisplayText();
             if (font.width(text) > width - 4) {
                 text = font.plainSubstrByWidth(text, width - 8) + "...";
             }
-            graphics.drawString(font, Component.literal(text), x + 2, y + (height - 8) / 2, 0xFFFFFFFF, false);
+            graphics.drawString(font, Component.literal(text), baseX + 2, visualY + (height - 8) / 2, 0xFFFFFFFF, false);
         }
 
-        @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (isMouseOver(mouseX, mouseY) && onClick != null) {
+        public boolean isMouseOver(double mouseX, double mouseY, int visualY) {
+            return mouseX >= baseX && mouseX < baseX + width
+                    && mouseY >= visualY && mouseY < visualY + height;
+        }
+
+        public boolean mouseClicked(double mouseX, double mouseY, int button, int visualY) {
+            if (isMouseOver(mouseX, mouseY, visualY) && onClick != null) {
                 onClick.accept(task, index);
                 return true;
             }

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="aui-font-mode" content="web">
+    <meta name="aui-viewport" content="mode=browser">
+    <meta name="aui-mouse-events" content="passthrough">
+    <title>塔科夫背包</title>
+    <link rel="stylesheet" href="/css/tarkov-inventory.css">
+</head>
+<body>
+    <!-- 毛玻璃背景 -->
+    <div class="blur-bg"></div>
+
+    <!-- ===== 顶部边栏 ===== -->
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <button class="tab-button active" data-tab="0">角色</button>
+            <button class="tab-button" data-tab="1">物资</button>
+            <button class="tab-button" data-tab="2">战局价值</button>
+        </div>
+        <div class="top-bar-right">
+            <button class="top-button" id="btnClose">返回</button>
+        </div>
+    </div>
+
+    <!-- ===== 主内容区（三栏布局） ===== -->
+    <div class="main-content">
+        <!-- 左侧面板：角色装备 -->
+        <div class="left-panel" id="leftPanel">
+            <div class="player-name" id="playerName">--</div>
+            <div class="model-area" id="modelArea">
+                <!-- 左列：护甲槽 -->
+                <div class="slot-col left-col" id="armorCol">
+                    <div class="slot-bg" data-slot-index="3"></div>
+                    <div class="slot-bg" data-slot-index="4"></div>
+                    <div class="slot-bg" data-slot-index="5"></div>
+                    <div class="slot-bg" data-slot-index="6"></div>
+                    <div class="slot-bg" data-slot-index="7"></div>
+                </div>
+                <!-- 中间：玩家模型占位 -->
+                <div class="model-placeholder" id="modelPlaceholder"></div>
+                <!-- 右列：装备槽 -->
+                <div class="slot-col right-col" id="equipCol">
+                    <div class="slot-bg" data-slot-index="0"></div>
+                    <div class="slot-bg" data-slot-index="1"></div>
+                    <div class="slot-bg" data-slot-index="2"></div>
+                </div>
+            </div>
+            <div class="player-level" id="playerLevel">Lv.0</div>
+            <!-- 合成区 -->
+            <div class="crafting-area" id="craftingArea">
+                <div class="crafting-grid" id="craftingGrid">
+                    <div class="crafting-row">
+                        <div class="slot-bg" data-slot-index="9"></div>
+                        <div class="slot-bg" data-slot-index="10"></div>
+                    </div>
+                    <div class="crafting-row">
+                        <div class="slot-bg" data-slot-index="11"></div>
+                        <div class="slot-bg" data-slot-index="12"></div>
+                    </div>
+                </div>
+                <div class="slot-bg result-slot" data-slot-index="8"></div>
+                <span class="crafting-label">合成</span>
+            </div>
+            <!-- 状态栏 -->
+            <div class="status-area" id="statusArea">
+                <span>血量: <span id="statusHp">--</span></span>
+                <span>饥饿: <span id="statusHunger">--</span></span>
+                <span>口渴: <span id="statusThirst">--</span></span>
+                <span>重量: <span id="statusWeight">--</span></span>
+            </div>
+        </div>
+
+        <!-- 中部面板：仓库 -->
+        <div class="middle-panel" id="middlePanel">
+            <div class="panel-header">物资</div>
+            <div class="slot-grid-8col" id="middleGrid">
+                <!-- 由 Java 动态创建槽位元素 -->
+            </div>
+        </div>
+
+        <!-- 右侧面板：容器 -->
+        <div class="right-panel" id="rightPanel">
+            <div class="panel-header" id="containerTitle">容器</div>
+            <div class="slot-grid-8col" id="rightGrid">
+                <!-- 由 Java 动态创建槽位元素 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 底部快捷栏 ===== -->
+    <div class="bottom-bar" id="bottomBar">
+        <div class="hotbar-grid" id="hotbarGrid">
+            <!-- 由 Java 动态创建槽位元素 -->
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 由 Java 调用：设置文本内容
+         */
+        function setTextContent(id, text) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = text;
+        }
+
+        /**
+         * 由 Java 调用：显示/隐藏右侧面板
+         */
+        function setRightPanelVisible(visible) {
+            var el = document.getElementById('rightPanel');
+            if (!el) return;
+            el.classList.toggle('hidden', !visible);
+        }
+
+        /**
+         * 由 Java 调用：获取元素在文档坐标系中的位置和尺寸
+         * 返回 {left, top, width, height}
+         */
+        function getElementRect(id) {
+            var el = document.getElementById(id);
+            if (!el) return null;
+            var rect = el.getBoundingClientRect();
+            return {
+                left: rect.left,
+                top: rect.top,
+                width: rect.width,
+                height: rect.height
+            };
+        }
+
+        /**
+         * 由 Java 调用：获取所有 slot 元素在文档坐标系中的位置
+         * 返回 Map<slotIndex, {left, top, width, height}>
+         */
+        function getAllSlotRects() {
+            var slots = document.querySelectorAll('.slot-bg');
+            var result = {};
+            for (var i = 0; i < slots.length; i++) {
+                var idx = parseInt(slots[i].getAttribute('data-slot-index'));
+                if (isNaN(idx)) continue;
+                var rect = slots[i].getBoundingClientRect();
+                result[idx] = {
+                    left: rect.left,
+                    top: rect.top,
+                    width: rect.width,
+                    height: rect.height
+                };
+            }
+            return result;
+        }
+
+        // 标签切换
+        function initTabs() {
+            var buttons = document.querySelectorAll('.tab-button');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].addEventListener('click', function(e) {
+                    var btns = document.querySelectorAll('.tab-button');
+                    for (var j = 0; j < btns.length; j++) {
+                        btns[j].classList.remove('active');
+                    }
+                    e.target.classList.add('active');
+                });
+            }
+        }
+        document.addEventListener('DOMContentLoaded', initTabs);
+    </script>
+</body>
+</html>

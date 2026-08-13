@@ -3,7 +3,6 @@ package com.modernizegameframework.inventory;
 import com.modernizegameframework.securecontainer.SecureContainerItem;
 import com.modernizegameframework.securecontainer.SecureContainerType;
 import com.modernizegameframework.ui.UILayout;
-import com.modernizegameframework.ui.UIScrollPanel;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -264,7 +263,7 @@ public class TarkovInventoryMenu extends AbstractContainerMenu {
     private void computeMiddleSlotSize() {
         UILayout.Rect middle = UILayout.middlePanel(screenWidth, screenHeight);
         int margin = UILayout.scaled(20, screenHeight);
-        int availableWidth = middle.width() - margin * 2 - UIScrollPanel.SCROLLBAR_WIDTH;
+        int availableWidth = middle.width() - margin * 2 - 6; // SCROLLBAR_WIDTH
         this.middleSlotSize = Math.max(BASE_SLOT_SIZE, (int) Math.floor(availableWidth / 8.875f));
         int maxGap = (availableWidth - MIDDLE_PANEL_COLUMNS * this.middleSlotSize) / (MIDDLE_PANEL_COLUMNS - 1);
         int preferredGap = Math.round(this.middleSlotSize * 0.125f);

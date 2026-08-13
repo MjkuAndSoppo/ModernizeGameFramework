@@ -62,7 +62,9 @@ public class UILayout {
      * 使用最小边适配，确保 16:9 面板完整显示
      */
     public static float scale(int screenWidth, int screenHeight) {
-        return UIScale.byMinSide(screenWidth, screenHeight);
+        float scaleX = (float) screenWidth / PANEL_BASE_WIDTH;
+        float scaleY = (float) screenHeight / PANEL_BASE_HEIGHT;
+        return Math.min(scaleX, scaleY);
     }
 
     /**
@@ -91,10 +93,9 @@ public class UILayout {
      * 计算底边栏矩形
      */
     public static Rect bottomBar(int screenWidth, int screenHeight) {
-        int height = UIUnit.clamp(
-                UIUnit.vh(BOTTOM_BAR_HEIGHT_RATIO * 100, screenHeight),
-                BOTTOM_BAR_MIN_HEIGHT,
-                BOTTOM_BAR_MAX_HEIGHT);
+        int height = Math.max(BOTTOM_BAR_MIN_HEIGHT,
+                Math.min(BOTTOM_BAR_MAX_HEIGHT,
+                        Math.round(screenHeight * BOTTOM_BAR_HEIGHT_RATIO)));
         return new Rect(0, screenHeight - height, screenWidth, height);
     }
 
@@ -207,7 +208,7 @@ public class UILayout {
      * 将基准尺寸转换为当前屏幕缩放后的像素值
      */
     public static int screenSize(int baseSize, int screenWidth, int screenHeight) {
-        return UIScale.px(baseSize, scale(screenWidth, screenHeight));
+        return Math.round(baseSize * scale(screenWidth, screenHeight));
     }
 
     /**
