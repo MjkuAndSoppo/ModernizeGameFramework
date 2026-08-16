@@ -60,21 +60,17 @@ public class TarkovInventoryHelper {
     }
 
     /**
-     * 获取玩家当前解锁的主仓库格数
+     * 获取玩家当前解锁的主仓库格数（废弃弹挂系统后全部解锁）
      */
     public static int getUnlockedMainSlots(Player player) {
-        return player.getCapability(TarkovInventoryCapabilityRegistry.TARKOV_INVENTORY_CAPABILITY)
-                .map(cap -> getUnlockedMainSlots(cap.getChestRig()))
-                .orElse(0);
+        return 27;
     }
 
     /**
-     * 获取玩家当前可用的背包扩展格数量
+     * 获取玩家当前可用的背包扩展格数量（废弃背包系统后归零）
      */
     public static int getExpansionSlotCount(Player player) {
-        return player.getCapability(TarkovInventoryCapabilityRegistry.TARKOV_INVENTORY_CAPABILITY)
-                .map(cap -> getExpansionSlotCount(cap.getBackpack()))
-                .orElse(0);
+        return 0;
     }
 
     /**

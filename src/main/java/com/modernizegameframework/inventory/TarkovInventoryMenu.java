@@ -84,14 +84,14 @@ public class TarkovInventoryMenu extends AbstractContainerMenu {
 
     // ===== 槽位范围（按添加顺序） =====
     public static final int EQUIPMENT_START = 0;
-    public static final int EQUIPMENT_COUNT = 3;       // 胸挂、背包、安全箱
-    public static final int ARMOR_START = 3;
+    public static final int EQUIPMENT_COUNT = 1;       // 仅安全箱（废弃弹挂和背包）
+    public static final int ARMOR_START = 1;
     public static final int ARMOR_COUNT = 5;           // 头、胸、腿、脚、副手
     public static final int OFFHAND_INDEX = ARMOR_START + 4;  // 副手槽位索引（最后一个护甲槽）
-    public static final int RESULT_SLOT = 8;
-    public static final int CRAFTING_START = 9;
+    public static final int RESULT_SLOT = 6;
+    public static final int CRAFTING_START = 7;
     public static final int CRAFTING_COUNT = 4;
-    public static final int CONTAINER_START = 13;
+    public static final int CONTAINER_START = 11;
 
     private final Inventory playerInventory;
     private final TarkovInventoryCapability tarkovInv;
@@ -139,8 +139,8 @@ public class TarkovInventoryMenu extends AbstractContainerMenu {
     private int middleSlotGap;
     /** 中部面板槽位行间距 */
     private int middleRowGap;
-    /** 中部面板固定列数 */
-    private static final int MIDDLE_PANEL_COLUMNS = 8;
+    /** 中部面板固定列数（原版9列） */
+    private static final int MIDDLE_PANEL_COLUMNS = 9;
     /** 右侧面板容器固定列数 */
     private static final int RIGHT_PANEL_COLUMNS = 8;
 
@@ -257,14 +257,14 @@ public class TarkovInventoryMenu extends AbstractContainerMenu {
     }
 
     /**
-     * 根据中部面板可用宽度计算固定 8 列下的槽位尺寸与间隙。
-     * 公式与 ui_preview.html 保持一致：尺寸 = max(16, floor(可用宽度 / 8.875))。
+     * 根据中部面板可用宽度计算固定 9 列下的槽位尺寸与间隙。
+     * 公式：尺寸 = max(16, floor(可用宽度 / 9.875))。
      */
     private void computeMiddleSlotSize() {
         UILayout.Rect middle = UILayout.middlePanel(screenWidth, screenHeight);
         int margin = UILayout.scaled(20, screenHeight);
         int availableWidth = middle.width() - margin * 2 - 6; // SCROLLBAR_WIDTH
-        this.middleSlotSize = Math.max(BASE_SLOT_SIZE, (int) Math.floor(availableWidth / 8.875f));
+        this.middleSlotSize = Math.max(BASE_SLOT_SIZE, (int) Math.floor(availableWidth / 9.875f));
         int maxGap = (availableWidth - MIDDLE_PANEL_COLUMNS * this.middleSlotSize) / (MIDDLE_PANEL_COLUMNS - 1);
         int preferredGap = Math.round(this.middleSlotSize * 0.125f);
         this.middleSlotGap = Math.max(1, Math.min(preferredGap, maxGap));
@@ -486,9 +486,8 @@ public class TarkovInventoryMenu extends AbstractContainerMenu {
     private void addEquipmentSlots() {
         ItemStackHandler equipment = tarkovInv.getEquipmentInventory();
         int x = rightColX();
-        addSlot(new NotifyingSlotItemHandler(equipment, TarkovInventoryCapability.SLOT_CHEST_RIG, x, leftRowY(0)));
-        addSlot(new NotifyingSlotItemHandler(equipment, TarkovInventoryCapability.SLOT_BACKPACK, x, leftRowY(1)));
-        addSlot(new NotifyingSlotItemHandler(equipment, TarkovInventoryCapability.SLOT_SECURE_CASE, x, leftRowY(2)));
+        // 废弃弹挂(SLOT_CHEST_RIG)和背包(SLOT_BACKPACK)，仅保留安全箱
+        addSlot(new NotifyingSlotItemHandler(equipment, TarkovInventoryCapability.SLOT_SECURE_CASE, x, leftRowY(0)));
     }
 
     private void addArmorSlots() {

@@ -32,19 +32,17 @@
             <div class="model-area" id="modelArea">
                 <!-- 左列：护甲槽 -->
                 <div class="slot-col left-col" id="armorCol">
+                    <div class="slot-bg" data-slot-index="1"></div>
+                    <div class="slot-bg" data-slot-index="2"></div>
                     <div class="slot-bg" data-slot-index="3"></div>
                     <div class="slot-bg" data-slot-index="4"></div>
                     <div class="slot-bg" data-slot-index="5"></div>
-                    <div class="slot-bg" data-slot-index="6"></div>
-                    <div class="slot-bg" data-slot-index="7"></div>
                 </div>
                 <!-- 中间：玩家模型占位 -->
                 <div class="model-placeholder" id="modelPlaceholder"></div>
-                <!-- 右列：装备槽 -->
+                <!-- 右列：装备槽（仅安全箱） -->
                 <div class="slot-col right-col" id="equipCol">
                     <div class="slot-bg" data-slot-index="0"></div>
-                    <div class="slot-bg" data-slot-index="1"></div>
-                    <div class="slot-bg" data-slot-index="2"></div>
                 </div>
             </div>
             <div class="player-level" id="playerLevel">Lv.0</div>
@@ -52,15 +50,15 @@
             <div class="crafting-area" id="craftingArea">
                 <div class="crafting-grid" id="craftingGrid">
                     <div class="crafting-row">
+                        <div class="slot-bg" data-slot-index="7"></div>
+                        <div class="slot-bg" data-slot-index="8"></div>
+                    </div>
+                    <div class="crafting-row">
                         <div class="slot-bg" data-slot-index="9"></div>
                         <div class="slot-bg" data-slot-index="10"></div>
                     </div>
-                    <div class="crafting-row">
-                        <div class="slot-bg" data-slot-index="11"></div>
-                        <div class="slot-bg" data-slot-index="12"></div>
-                    </div>
                 </div>
-                <div class="slot-bg result-slot" data-slot-index="8"></div>
+                <div class="slot-bg result-slot" data-slot-index="6"></div>
                 <span class="crafting-label">合成</span>
             </div>
             <!-- 状态栏 -->
@@ -75,7 +73,7 @@
         <!-- 中部面板：仓库 -->
         <div class="middle-panel" id="middlePanel">
             <div class="panel-header">物资</div>
-            <div class="slot-grid-8col" id="middleGrid">
+            <div class="slot-grid-9col" id="middleGrid">
                 <!-- 由 Java 动态创建槽位元素 -->
             </div>
         </div>

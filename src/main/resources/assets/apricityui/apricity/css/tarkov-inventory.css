@@ -265,10 +265,21 @@ html, body {
     flex-shrink: 0;
 }
 
-/* ===== 8 列槽位网格（中部 + 右侧） ===== */
+/* ===== 8 列槽位网格（右侧容器） ===== */
 .slot-grid-8col {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    padding: 4px;
+    overflow-y: auto;
+    flex: 1;
+    align-content: start;
+}
+
+/* ===== 9 列槽位网格（中部玩家背包） ===== */
+.slot-grid-9col {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
     gap: 2px;
     padding: 4px;
     overflow-y: auto;
@@ -316,19 +327,23 @@ html, body {
 }
 
 /* ===== 滚动条美化 ===== */
-.slot-grid-8col::-webkit-scrollbar {
+.slot-grid-8col::-webkit-scrollbar,
+.slot-grid-9col::-webkit-scrollbar {
     width: 4px;
 }
 
-.slot-grid-8col::-webkit-scrollbar-track {
+.slot-grid-8col::-webkit-scrollbar-track,
+.slot-grid-9col::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.slot-grid-8col::-webkit-scrollbar-thumb {
+.slot-grid-8col::-webkit-scrollbar-thumb,
+.slot-grid-9col::-webkit-scrollbar-thumb {
     background: #444444;
     border-radius: 2px;
 }
 
-.slot-grid-8col::-webkit-scrollbar-thumb:hover {
+.slot-grid-8col::-webkit-scrollbar-thumb:hover,
+.slot-grid-9col::-webkit-scrollbar-thumb:hover {
     background: #666666;
 }
