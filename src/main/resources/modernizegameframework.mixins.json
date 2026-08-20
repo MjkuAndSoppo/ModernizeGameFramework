@@ -11,8 +11,6 @@
     "client": [
         "MouseHandlerMixin",
         "MixinMinecraft",
-        "LevelRendererMixin",
-        "ERDAccessor",
         "ACSAccessor"
     ],
     "server": [],

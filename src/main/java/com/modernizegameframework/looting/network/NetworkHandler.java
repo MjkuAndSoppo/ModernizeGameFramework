@@ -3,7 +3,6 @@ package com.modernizegameframework.looting.network;
 import com.modernizegameframework.looting.BetterLooting;
 import com.modernizegameframework.looting.network.C2S.PacketBatchPickup;
 import com.modernizegameframework.looting.network.C2S.PacketPlaceIntoSlot;
-import com.modernizegameframework.looting.network.S2C.PacketSyncConfig;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkRegistry;
@@ -44,12 +43,6 @@ public class NetworkHandler {
                 PacketPlaceIntoSlot::toBytes,
                 PacketPlaceIntoSlot::new,
                 PacketPlaceIntoSlot::handle);
-
-        // 注册服务端向客户端同步的：配置更新数据包 (S2C)
-        INSTANCE.registerMessage(2, PacketSyncConfig.class,
-                PacketSyncConfig::toBytes,
-                PacketSyncConfig::new,
-                PacketSyncConfig::handle);
     }
 
     /**

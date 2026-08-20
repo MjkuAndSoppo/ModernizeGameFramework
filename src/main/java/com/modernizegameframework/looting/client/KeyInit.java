@@ -20,7 +20,6 @@ public class KeyInit {
         event.register(PICKUP);
         event.register(PICKUP_ALT);
         event.register(PICKUP_ALL_MODIFIER);
-        event.register(OPEN_CONFIG);
         event.register(TOGGLE_AUTO);
         event.register(SHOW_OVERLAY);
         event.register(SCROLL_UP);
@@ -49,14 +48,6 @@ public class KeyInit {
             "key.better_looting.pickup_all_modifier",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_LEFT_SHIFT,
-            CATEGORY
-    );
-
-    // 打开模组配置界面 (默认: K)
-    public static final KeyMapping OPEN_CONFIG = new KeyMapping(
-            "key.better_looting.open_config",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_K,
             CATEGORY
     );
 

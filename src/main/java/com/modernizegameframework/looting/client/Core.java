@@ -32,7 +32,6 @@ public class Core {
 
     public void init() {
         FilterWhitelist.INSTANCE.init();
-        com.modernizegameframework.looting.client.skin.SkinManager.INSTANCE.init();
         ModeManager.INSTANCE.init();
         InputGuard.INSTANCE.init(selectionManager, keyTracker, pickupHandler);
 

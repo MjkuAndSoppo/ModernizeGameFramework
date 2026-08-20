@@ -1,11 +1,7 @@
 package com.modernizegameframework.looting.client;
 
 import com.modernizegameframework.looting.client.inventory.InventoryLootList;
-import com.modernizegameframework.looting.client.overlay.HotbarIndicator;
-import com.modernizegameframework.looting.client.overlay.Overlay;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -36,18 +32,6 @@ public class BetterLootingClient {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != null) {
             Core.INSTANCE.onClientTick(mc);
-            Overlay.INSTANCE.onTick(mc);
         }
-    }
-
-    /**
-     * HUD 渲染事件：在主界面绘制战利品悬浮窗与模式指示器。
-     */
-    @SubscribeEvent
-    public static void onRenderHud(RenderGuiEvent.Post event) {
-        GuiGraphics gui = event.getGuiGraphics();
-        float partialTick = event.getPartialTick();
-        Overlay.INSTANCE.render(gui, partialTick);
-        HotbarIndicator.INSTANCE.render(gui, partialTick);
     }
 }

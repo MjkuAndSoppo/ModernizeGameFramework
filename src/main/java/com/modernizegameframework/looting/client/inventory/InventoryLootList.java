@@ -115,7 +115,7 @@ public class InventoryLootList {
         float listAlpha = cfg.inventoryListAlpha;
         int panelHeight = cfg.inventoryListHeight; // 局部高度（缩放前）
 
-        // 与 ConfigScreen 同构：左上角为锚点，仅由偏移决定（不随宽高/缩放变动），
+        // 左上角为锚点，仅由偏移决定（不随宽高/缩放变动），
         // 宽、高、缩放统一从锚点向右下方生长。默认锚点贴合背包左侧。
         int panelStartX = leftPos - gap - Constants.LIST_X - DEFAULT_LIST_WIDTH + Math.round(cfg.inventoryListXOffset);
         int panelTop = topPos + Math.round(cfg.inventoryListYOffset);
@@ -190,7 +190,7 @@ public class InventoryLootList {
             boolean isNew = !core.isItemInInventory(entry.getItem().getItem());
 
             renderer.renderItemRow(gui, Constants.LIST_X, drawY, panelWidth, entry,
-                    false, rowBgAlpha * listAlpha, itemAlpha * listAlpha, isNew, true);
+                    false, rowBgAlpha * listAlpha, itemAlpha * listAlpha, isNew, false);
         }
 
         // === 滚动条（局部坐标，随 scale 一同缩放） ===

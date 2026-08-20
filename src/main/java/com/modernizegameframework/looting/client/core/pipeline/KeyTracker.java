@@ -1,7 +1,6 @@
 package com.modernizegameframework.looting.client.core.pipeline;
 
 import com.modernizegameframework.looting.client.KeyInit;
-import com.modernizegameframework.looting.config.ConfigScreen;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -17,7 +16,6 @@ public class KeyTracker {
 
     // 记录上一帧的按键状态，用于边缘检测
     private boolean wasToggleKeyDown = false;
-    private boolean wasConfigKeyDown = false;
     private boolean wasAutoKeyDown = false;
 
     /**
@@ -25,7 +23,7 @@ public class KeyTracker {
      */
     public void tickOverlayToggle() {
         boolean isCurrentToggleDown = KeyInit.SHOW_OVERLAY.isDown();
-        // 只有在“当前帧按键按下，且上一帧未按下”时，才触发状态翻转
+        // 只有在"当前帧按键按下，且上一帧未按下"时，才触发状态翻转
         if (isCurrentToggleDown && !wasToggleKeyDown) {
             toggleOverlayActive = !toggleOverlayActive;
         }
@@ -33,17 +31,11 @@ public class KeyTracker {
     }
 
     /**
-     * 每一帧检测功能切换键（打开配置、自动模式）。
+     * 每一帧检测功能切换键（自动模式）。
      * 将具体的行为封装进 Runnable 回调中。
      * @param onToggleAuto   切换自动模式的回调
      */
     public void tickActionToggles(Runnable onToggleAuto) {
-        boolean isCurrentConfigDown = KeyInit.OPEN_CONFIG.isDown();
-        if (isCurrentConfigDown && !wasConfigKeyDown) {
-            Minecraft.getInstance().setScreen(new ConfigScreen());
-        }
-        wasConfigKeyDown = isCurrentConfigDown;
-
         boolean isCurrentAutoDown = KeyInit.TOGGLE_AUTO.isDown();
         if (isCurrentAutoDown && !wasAutoKeyDown) onToggleAuto.run();
         wasAutoKeyDown = isCurrentAutoDown;
