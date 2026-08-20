@@ -21,5 +21,8 @@ build
 eclipse
 run
 
+# 本地资产（不纳入版本控制）
+/资产/
+
 # Files from Forge MDK
 forge*changelog.txt
