@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="aui-font-mode" content="web">
+    <meta name="aui-viewport" content="mode=browser">
+    <meta name="aui-mouse-events" content="passthrough">
+    <title>战利品拾取悬浮窗</title>
+    <style>
+        /* ============ MGF 现代扁平风 ============ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: transparent;
+            overflow: hidden;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            user-select: none;
+        }
+
+        /* 主面板：居中定位，由 Java 端每次更新偏移与缩放 */
+        #loot-hud {
+            position: fixed;
+            left: 0;
+            top: 0;
+            transform-origin: center center;
+            display: flex;
+            flex-direction: column;
+            width: 220px;
+            opacity: 0;
+            transition: opacity 0.12s ease-out, transform 0.12s ease-out;
+        }
+        #loot-hud[data-shown="1"] {
+            opacity: 1;
+        }
+
+        /* 标题栏 */
+        #hud-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            margin-bottom: 4px;
+            background: rgba(14, 16, 22, 0.82);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+        }
+        #hud-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e8eaf0;
+            letter-spacing: 1px;
+            text-shadow: 0 0 8px rgba(150, 180, 255, 0.25);
+        }
+        #hud-count {
+            font-size: 11px;
+            color: #9aa3b2;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 1px 8px;
+            border-radius: 999px;
+        }
+
+        /* 物品列表容器：外层裁剪视口，内层做滚动位移 */
+        #loot-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+        }
+        #loot-list-inner {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            will-change: transform;
+        }
+        .loot-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 26px;
+            padding: 2px 8px;
+            background: rgba(14, 16, 22, 0.55);
+            border: 1px solid transparent;
+            border-radius: 6px;
+            transition: background 0.1s ease-out, border-color 0.1s ease-out;
+        }
+        .loot-row[data-selected="1"] {
+            background: rgba(70, 110, 255, 0.22);
+            border-color: rgba(110, 150, 255, 0.5);
+        }
+        .loot-row[data-new="1"] {
+            border-left: 2px solid #ffaa00;
+        }
+        /* 物品图标占位（16px，AUI item 元素） */
+        .loot-icon {
+            flex: 0 0 16px;
+            width: 16px;
+            height: 16px;
+        }
+        .loot-name {
+            flex: 1;
+            font-size: 12px;
+            color: #e4e7ef;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .loot-name[data-in-inventory="1"] {
+            color: #7ac07a;
+        }
+        .loot-count {
+            flex: 0 0 auto;
+            font-size: 11px;
+            color: #cfd6e4;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        /* 按键提示条 */
+        #hud-hint {
+            margin-top: 4px;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #b7bfce;
+            background: rgba(14, 16, 22, 0.6);
+            border-radius: 6px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="loot-hud">
+        <div id="hud-header">
+            <span id="hud-title">战利品拾取</span>
+            <span id="hud-count">0</span>
+        </div>
+        <div id="loot-list">
+            <div id="loot-list-inner"></div>
+        </div>
+        <div id="hud-hint" style="display:none;"></div>
+    </div>
+</body>
+<script>
+// 由 Java 端动态填充 #loot-list，此处的空脚本仅为保留扩展点
+</script>
+</html>

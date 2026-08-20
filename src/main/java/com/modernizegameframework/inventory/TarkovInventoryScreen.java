@@ -211,8 +211,18 @@ public class TarkovInventoryScreen extends AbstractContainerScreen<TarkovInvento
             Position docPos = new Position(rect.x, rect.y);
             Position screenPos = auiDocument.documentToScreenPosition(docPos);
             modelCenterX = (int) Math.round(screenPos.x + rect.width * scaleX / 2);
-            modelCenterY = (int) Math.round(screenPos.y + rect.height * scaleY / 2);
-            modelSize = (int) Math.round(rect.height * scaleY);
+            // 原版 3D 小人渲染尺寸：占位区高度经视口缩放后再放大 2 倍（仅放大渲染，不影响布局占位）
+            modelSize = (int) Math.round(rect.height * scaleY) * 2;
+            // 模型底部对齐"等级"文字顶部（下移 10px）：读取等级元素顶部 Y，反推模型中心 Y
+            int levelTopY = (int) Math.round(screenPos.y + rect.height * scaleY / 2);
+            Element levelEl = auiDocument.getElementById("playerLevel");
+            if (levelEl != null) {
+                Element.DOMRect levelRect = levelEl.getBoundingClientRect();
+                Position levelDocPos = new Position(levelRect.x, levelRect.y);
+                Position levelScreenPos = auiDocument.documentToScreenPosition(levelDocPos);
+                levelTopY = (int) Math.round(levelScreenPos.y);
+            }
+            modelCenterY = levelTopY - modelSize / 2;
         }
     }
 

@@ -449,10 +449,8 @@ public class Operation {
     }
 
     private static boolean handleFrameworkShortcut(int key, int modifiers) {
-        boolean devToolsShortcut = key == AuiServices.keys().devToolsKey()
-                || (key == GLFW.GLFW_KEY_I
-                && (modifiers & (GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_SHIFT))
-                == (GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_SHIFT));
+        // 仅响应按键设置中绑定的 DevTools 键（默认未绑定，不再内置 Ctrl+Shift+I）
+        boolean devToolsShortcut = key == AuiServices.keys().devToolsKey();
         if (devToolsShortcut) {
             DevTools.toggle();
             return true;

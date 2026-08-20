@@ -143,6 +143,9 @@ public class ModernizeGameFramework
         // Register lighting network messages
         LightingNetwork.register();
 
+        // 初始化战利品拾取（BetterLooting）模块：配置、网络、事件与指令
+        com.modernizegameframework.looting.BetterLooting.init();
+
         // Register secure container items and menu types
         SecureContainerRegistry.ITEMS.register(modEventBus);
         SecureContainerRegistry.MENU_TYPES.register(modEventBus);
@@ -221,7 +224,17 @@ public class ModernizeGameFramework
             net.minecraft.client.gui.screens.MenuScreens.register(
                     TarkovInventoryRegistry.TARKOV_INVENTORY_MENU.get(), TarkovInventoryScreen::new);
 
+            // 初始化战利品拾取模块（BetterLooting）客户端：注册渲染事件与核心逻辑
+            com.modernizegameframework.looting.client.BetterLootingClient.init();
+
             // 安全箱模型直接使用对应颜色的潜影盒模型，无需额外着色
+        }
+
+        @SubscribeEvent
+        public static void onRegisterKeyMappings(net.minecraftforge.client.event.RegisterKeyMappingsEvent event)
+        {
+            // 注册战利品拾取模块（BetterLooting）的按键绑定
+            com.modernizegameframework.looting.client.KeyInit.register(event);
         }
     }
 }

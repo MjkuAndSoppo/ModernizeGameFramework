@@ -137,10 +137,20 @@ html, body {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     width: 100%;
     gap: 12px;
     padding: 4px 0;
+}
+
+/* 左列护甲槽贴合左侧边框，槽内容距边框 18px，远离中间3D小人 */
+.left-col {
+    padding-left: 18px;
+}
+
+/* 右列装备槽贴合右侧边框，槽内容距边框 18px，远离中间3D小人 */
+.right-col {
+    padding-right: 18px;
 }
 
 /* 槽位列（左列/右列） */

@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "better_looting",
+  "version": "${version}",
+  "name": "Better Looting",
+  "description": "Tired of being a walking vacuum? Try RPG-style immersive loot management.",
+  "authors": [
+    "MoHuia"
+  ],
+  "contact": {
+    "homepage": "https://github.com/MoHuia/better_looting",
+    "sources": "https://github.com/MoHuia/better_looting",
+    "issues": "https://github.com/MoHuia/better_looting/issues"
+  },
+  "license": "GNU LGPLv3",
+  "icon": "icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.mohuia.better_looting.fabric.BetterLootingFabric"
+    ],
+    "client": [
+      "com.mohuia.better_looting.fabric.client.BetterLootingFabricClient"
+    ],
+    "jei_plugin_fabric": [
+      "com.mohuia.better_looting.client.jei.JeiPlugin"
+    ]
+  },
+  "mixins": [
+    "better_looting.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": "*",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "architectury": ">=9.2.14",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}

@@ -37,6 +37,7 @@ import java.util.Collection;
  *   /mgf sc on|off      - 开关安全箱
  *   /mgf bhop on|off    - 开关连跳/移动
  *   /mgf stamina on|off - 开关体力
+ *   /mgf looting on|off - 开关战利品拾取
  *   /mgf status         - 查看当前状态
  */
 @Mod.EventBusSubscriber(modid = ModernizeGameFramework.MODID)
@@ -80,6 +81,11 @@ public class ModCommands {
                                         .executes(ctx -> toggleHollowHouse(ctx, true)))
                                 .then(Commands.literal("off")
                                         .executes(ctx -> toggleHollowHouse(ctx, false))))
+                        .then(Commands.literal("looting")
+                                .then(Commands.literal("on")
+                                        .executes(ctx -> toggleLooting(ctx, true)))
+                                .then(Commands.literal("off")
+                                        .executes(ctx -> toggleLooting(ctx, false))))
                         .then(Commands.literal("status")
                                 .executes(ModCommands::showStatus))
         );
@@ -140,6 +146,17 @@ public class ModCommands {
         HollowHouseConfig.ENABLED.set(enable);
         ctx.getSource().sendSuccess(
                 () -> Component.literal("§a藏身处系统 已" + (enable ? "§e开启" : "§c关闭")),
+                true);
+        return 1;
+    }
+
+    private static int toggleLooting(CommandContext<CommandSourceStack> ctx, boolean enable) {
+        com.modernizegameframework.looting.config.BetterLootingConfig config =
+                com.modernizegameframework.looting.config.BetterLootingConfig.get();
+        config.enabled = enable;
+        com.modernizegameframework.looting.config.BetterLootingConfig.save();
+        ctx.getSource().sendSuccess(
+                () -> Component.literal("§a战利品拾取 已" + (enable ? "§e开启" : "§c关闭")),
                 true);
         return 1;
     }
@@ -234,6 +251,7 @@ public class ModCommands {
         boolean stamina = StaminaConfig.ENABLED.get();
         boolean bodypart = Config.BODYPART_ENABLED.get();
         boolean hollowHouse = HollowHouseConfig.ENABLED.get();
+        boolean looting = com.modernizegameframework.looting.config.BetterLootingConfig.get().enabled;
 
         ctx.getSource().sendSuccess(() -> Component.literal(
                 "§6===== MGF 功能状态 =====\n" +
@@ -241,7 +259,8 @@ public class ModCommands {
                 "§f连跳/移动: " + (bhop ? "§a开启" : "§c关闭") + "\n" +
                 "§f体力: " + (stamina ? "§a开启" : "§c关闭") + "\n" +
                 "§f肢节血量: " + (bodypart ? "§a开启" : "§c关闭") + "\n" +
-                "§f藏身处: " + (hollowHouse ? "§a开启" : "§c关闭")), false);
+                "§f藏身处: " + (hollowHouse ? "§a开启" : "§c关闭") + "\n" +
+                "§f战利品拾取: " + (looting ? "§a开启" : "§c关闭")), false);
         return 1;
     }
 }

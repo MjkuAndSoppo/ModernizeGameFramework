@@ -29,19 +29,21 @@ public class Keybindings {
             "key.categories.apricityui"
     );
 
+    // 开发者工具：默认不绑定按键（避免占用 F12），玩家可在按键设置中自行绑定
     public static final KeyMapping DEV_TOOLS = new KeyMapping("key.apricityui.dev_tools",
             KeyConflictContext.GUI,
             KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_F12,
+            InputConstants.UNKNOWN.getValue(),
             "key.categories.apricityui"
     );
 
+    // 资源管理器：默认不绑定按键（避免占用 F10），玩家可在按键设置中自行绑定
     public static final KeyMapping RESOURCE_MANAGER = new KeyMapping("key.apricityui.resource_manager",
             KeyConflictContext.GUI,
             KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_F10,
+            InputConstants.UNKNOWN.getValue(),
             "key.categories.apricityui"
     );
 
