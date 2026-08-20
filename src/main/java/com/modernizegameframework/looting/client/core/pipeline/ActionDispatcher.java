@@ -14,22 +14,16 @@ import java.util.List;
 public class ActionDispatcher {
 
     /**
-     * 发送单体拾取请求，仅拾取当前选中列表项对应的实体。
-     * @param selection 选区管理器实例
+     * 发送单体拾取请求，仅拾取传入视觉项所对应的实体（由准心瞄准结果决定）。
+     * @param entry 被准心对准的视觉列表项
      */
-    public static void sendSinglePickup(SelectionManager selection) {
-        List<VisualItemEntry> items = selection.getNearbyItems();
-        int index = selection.getSelectedIndex();
+    public static void sendEntryPickup(VisualItemEntry entry) {
+        List<Integer> ids = new ArrayList<>();
+        // 过滤死亡实体，确保服务器只处理存活的 ItemEntity，避免发包冗余
+        entry.getSourceEntities().forEach(e -> { if(e.isAlive()) ids.add(e.getId()); });
 
-        if (index >= 0 && index < items.size()) {
-            VisualItemEntry entry = items.get(index);
-            List<Integer> ids = new ArrayList<>();
-            // 过滤死亡实体，确保服务器只处理存活的 ItemEntity，避免发包冗余
-            entry.getSourceEntities().forEach(e -> { if(e.isAlive()) ids.add(e.getId()); });
-
-            if (!ids.isEmpty()) {
-                NetworkHandler.sendToServer(new PacketBatchPickup(ids, false, true));
-            }
+        if (!ids.isEmpty()) {
+            NetworkHandler.sendToServer(new PacketBatchPickup(ids, false, true));
         }
     }
 

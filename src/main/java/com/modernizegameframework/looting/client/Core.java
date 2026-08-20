@@ -8,14 +8,19 @@ import com.modernizegameframework.looting.client.filter.FilterWhitelist;
 import com.modernizegameframework.looting.config.BetterLootingConfig;
 import com.modernizegameframework.looting.config.FilterMode;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 客户端核心门面，负责串联各子模块：扫描、模式、输入、拾取编排。
@@ -75,10 +80,10 @@ public class Core {
             pickupHandler.resetAutoCooldown();
         }
 
-        handleInputLogic();
+        handleInputLogic(mc);
     }
 
-    private void handleInputLogic() {
+    private void handleInputLogic(Minecraft mc) {
         keyTracker.tickActionToggles(ModeManager.INSTANCE::toggleAutoMode);
 
         boolean isKeyDown = keyTracker.isPhysicalKeyDown(KeyInit.PICKUP)
@@ -90,8 +95,12 @@ public class Core {
 
         switch (action) {
             case SINGLE -> {
-                ActionDispatcher.sendSinglePickup(selectionManager);
-                InputGuard.INSTANCE.setGraceTicks(delayTicks);
+                // 纯准心瞄准：只拾取准心对准的那个掉落物（不可隔墙，命中碰撞箱取最近者）
+                VisualItemEntry aimed = resolveAimedTarget(mc);
+                if (aimed != null) {
+                    ActionDispatcher.sendEntryPickup(aimed);
+                    InputGuard.INSTANCE.setGraceTicks(delayTicks);
+                }
             }
             case BATCH -> {
                 var mode = BetterLootingConfig.get().longPressMode;
@@ -106,6 +115,67 @@ public class Core {
                 InputGuard.INSTANCE.setGraceTicks(delayTicks);
             }
         }
+    }
+
+    /**
+     * 准心瞄准拾取：以玩家视线发射射线，精确命中范围内掉落物的碰撞箱，
+     * 取距离视线最近且未被方块遮挡（不可隔墙拾取）的一个视觉项返回。
+     * @param mc 客户端实例
+     * @return 被准心对准的视觉列表项；未命中返回 null
+     */
+    private VisualItemEntry resolveAimedTarget(Minecraft mc) {
+        if (mc.player == null || mc.level == null) return null;
+
+        // 拾取范围在 1.5 格左右，为避免准心看向脚下时命中不到，适当放宽一点
+        double maxDist = Math.max(BetterLootingConfig.get().getActualScanRangeXZ(), 3.0);
+        Vec3 from = mc.player.getEyePosition();
+        Vec3 look = mc.player.getLookAngle();
+        Vec3 to = from.add(look.scale(maxDist));
+
+        double bestDistSq = maxDist * maxDist;
+        VisualItemEntry best = null;
+
+        for (VisualItemEntry entry : selectionManager.getUnfilteredItems()) {
+            for (ItemEntity e : entry.getSourceEntities()) {
+                if (!e.isAlive()) continue;
+                AABB box = e.getBoundingBox();
+
+                // 眼睛已在碰撞箱内则视为对准；否则使用射线与碰撞箱精确求交
+                Optional<Vec3> hit = box.contains(from) ? Optional.of(from) : box.clip(from, to);
+                if (hit.isEmpty()) continue;
+
+                Vec3 hitPoint = hit.get();
+                double distSq = from.distanceToSqr(hitPoint);
+                if (distSq > bestDistSq) continue;
+                // 不可隔墙拾取：眼睛到命中点之间若被方块阻挡则忽略
+                if (isBlockedByBlock(mc, from, hitPoint)) continue;
+
+                bestDistSq = distSq;
+                best = entry;
+                break;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * 检测眼睛到准心命中点之间是否存在阻挡方块（命中点自身的方块不算）。
+     */
+    private boolean isBlockedByBlock(Minecraft mc, Vec3 from, Vec3 hitPoint) {
+        ClipContext ctx = new ClipContext(
+                from, hitPoint,
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE,
+                mc.player
+        );
+        HitResult result = mc.level.clip(ctx);
+        if (result.getType() == HitResult.Type.BLOCK) {
+            // 方块命中点到眼睛的距离小于物品命中点（留微小容差），说明被墙挡住
+            double blockDist = from.distanceTo(result.getLocation());
+            double hitDist = from.distanceTo(hitPoint);
+            return blockDist < hitDist - 0.05;
+        }
+        return false;
     }
 
     public void performScroll(double delta) {
