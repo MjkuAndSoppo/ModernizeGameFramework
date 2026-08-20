@@ -10,8 +10,7 @@
     ],
     "client": [
         "MouseHandlerMixin",
-        "MixinMinecraft",
-        "ACSAccessor"
+        "MixinMinecraft"
     ],
     "server": [],
     "injectors": {

@@ -52,16 +52,6 @@ public class BetterLootingConfig {
     public final float mergeRangeY = 5.0f;
     /** 运输方块黑名单 (已禁用，保留字段) */
     public final String mergeTransportBlacklist = "belt,conveyor,chute,funnel,depot";
-    /** 物品栏掉落列表布局：写死的固定值 */
-    public final boolean showInventoryLootList = true;
-    public final int inventoryListWidth = 100;
-    public final float inventoryListXOffset = 0.0f;
-    public final float inventoryListYOffset = 0.0f;
-    public final float inventoryListScale = 1.0f;
-    public final float inventoryListAlpha = 0.9f;
-    public final int inventoryListHeight = 166;
-    /** 列表中单页可显示行数 */
-    public final float visibleRows = 4.5f;
     /** HUD 激活模式：固定为始终激活 */
     public final ActivationMode activationMode = ActivationMode.ALWAYS;
     /** 滚轮模式：固定为始终滚动 */

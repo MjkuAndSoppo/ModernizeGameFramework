@@ -64,8 +64,8 @@ public class SelectionManager {
         if (selectedIndex < 0) selectedIndex = size - 1;   // 越过顶部，跳到底部
         if (selectedIndex >= size) selectedIndex = 0;      // 越过底部，跳到顶部
 
-        // 获取用户配置中允许 HUD 显示的最大行数
-        double visibleRows = BetterLootingConfig.get().visibleRows;
+        // 单个滚动视野内可显示的最大行数（参考列表已移除，保留该固定值供选项滚动）
+        double visibleRows = 4.5;
 
         // 核心滚动视图逻辑：当列表项超出一页显示范围时，调整 offset 让选中项始终可见
         if (size > visibleRows) {
