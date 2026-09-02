@@ -10,7 +10,8 @@
     ],
     "client": [
         "MouseHandlerMixin",
-        "MixinMinecraft"
+        "MixinMinecraft",
+        "ItemEntitySpinMixin"
     ],
     "server": [],
     "injectors": {

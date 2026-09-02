@@ -95,10 +95,10 @@ public class Core {
 
         switch (action) {
             case SINGLE -> {
-                // 纯准心瞄准：只拾取准心对准的那个掉落物（不可隔墙，命中碰撞箱取最近者）
-                VisualItemEntry aimed = resolveAimedTarget(mc);
+                // 纯准心瞄准：只拾取准心对准的那一个掉落物（不可隔墙，命中碰撞箱取最近者）
+                ItemEntity aimed = resolveAimedTarget(mc);
                 if (aimed != null) {
-                    ActionDispatcher.sendEntryPickup(aimed);
+                    ActionDispatcher.sendSinglePickup(aimed);
                     InputGuard.INSTANCE.setGraceTicks(delayTicks);
                 }
             }
@@ -119,11 +119,12 @@ public class Core {
 
     /**
      * 准心瞄准拾取：以玩家视线发射射线，精确命中范围内掉落物的碰撞箱，
-     * 取距离视线最近且未被方块遮挡（不可隔墙拾取）的一个视觉项返回。
+     * 取距离视线最近且未被方块遮挡（不可隔墙拾取）的那一个掉落物实体返回。
+     * 注意：返回的是准心命中的【具体实体】而非同类分组，确保只捡起对准的那一个。
      * @param mc 客户端实例
-     * @return 被准心对准的视觉列表项；未命中返回 null
+     * @return 被准心对准的掉落物实体；未命中返回 null
      */
-    private VisualItemEntry resolveAimedTarget(Minecraft mc) {
+    private ItemEntity resolveAimedTarget(Minecraft mc) {
         if (mc.player == null || mc.level == null) return null;
 
         // 拾取范围在 1.5 格左右，为避免准心看向脚下时命中不到，适当放宽一点
@@ -133,7 +134,7 @@ public class Core {
         Vec3 to = from.add(look.scale(maxDist));
 
         double bestDistSq = maxDist * maxDist;
-        VisualItemEntry best = null;
+        ItemEntity best = null;
 
         for (VisualItemEntry entry : selectionManager.getUnfilteredItems()) {
             for (ItemEntity e : entry.getSourceEntities()) {
@@ -151,8 +152,7 @@ public class Core {
                 if (isBlockedByBlock(mc, from, hitPoint)) continue;
 
                 bestDistSq = distSq;
-                best = entry;
-                break;
+                best = e;
             }
         }
         return best;

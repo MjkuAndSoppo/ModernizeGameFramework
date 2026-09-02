@@ -14,17 +14,13 @@ import java.util.List;
 public class ActionDispatcher {
 
     /**
-     * 发送单体拾取请求，仅拾取传入视觉项所对应的实体（由准心瞄准结果决定）。
-     * @param entry 被准心对准的视觉列表项
+     * 发送单体拾取请求，仅拾取准心实际命中的那一个掉落物实体。
+     * 不再拾取整个同类分组，确保 F 键只捡起准心对准的掉落物。
+     * @param entity 被准心命中的具体掉落物实体
      */
-    public static void sendEntryPickup(VisualItemEntry entry) {
-        List<Integer> ids = new ArrayList<>();
-        // 过滤死亡实体，确保服务器只处理存活的 ItemEntity，避免发包冗余
-        entry.getSourceEntities().forEach(e -> { if(e.isAlive()) ids.add(e.getId()); });
-
-        if (!ids.isEmpty()) {
-            NetworkHandler.sendToServer(new PacketBatchPickup(ids, false, true));
-        }
+    public static void sendSinglePickup(ItemEntity entity) {
+        if (entity == null || !entity.isAlive()) return;
+        NetworkHandler.sendToServer(new PacketBatchPickup(List.of(entity.getId()), false, true));
     }
 
     /**
