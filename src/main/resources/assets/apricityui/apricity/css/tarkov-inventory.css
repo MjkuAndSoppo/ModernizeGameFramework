@@ -12,6 +12,8 @@ html, body {
     font-size: 0.73vw;
     color: #AAAAAA;
     background: transparent;
+    /* 全局禁止文字选中，防止鼠标左键拖选/拖移文本 */
+    user-select: none;
 }
 
 /* ===== 毛玻璃背景 ===== */
